@@ -1,0 +1,4 @@
+[gql]
+addr = "localhost"
+port = 4000
+path = ""

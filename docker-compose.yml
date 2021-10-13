@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:    
+  # GATEWAY for GraphQL
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: gateway
+    restart: always
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: docker
+    depends_on:
+      - users
+
+  # USERS service
+  users:
+    build:
+      context: .
+      dockerfile: ./users/Dockerfile
+    container_name: users
+    restart: always
+    environment:
+      RUN_MODE: docker
+    volumes:
+      - ./users/environments/:/environments/
+    ports:
+      - "8000:8000"
+
+  # LEAGUES service
+  leagues:
+    build:
+      context: .
+      dockerfile: ./leagues/Dockerfile
+    container_name: leagues
+    restart: always
+    environment:
+      RUN_MODE: docker
+    volumes:
+      - ./leagues/environments/:/environments/
+    ports:
+      - "8001:8001"
