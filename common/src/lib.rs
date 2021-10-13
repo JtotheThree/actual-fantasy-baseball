@@ -52,6 +52,7 @@ pub fn generate_token(
     .unwrap()    
 }
 
+// FIXME: This needs to gracefully send back an error if the session doesn't exist
 pub fn generate_session(
     con: &mut redis::Connection,
     user_id: &str,

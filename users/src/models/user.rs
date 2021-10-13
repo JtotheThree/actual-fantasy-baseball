@@ -1,4 +1,5 @@
 use async_graphql::*;
+use futures::stream::StreamExt;
 use serde::{Deserialize, Serialize};
 use wither::prelude::*;
 use wither::{
@@ -30,27 +31,51 @@ impl User {
         }
     }
 
-    pub fn to_user_info(&self) -> UserInfo {
-        UserInfo {
-            id: self.id.clone(),
-            username: self.username.clone(),
-            role: self.role.clone(),
-            email: self.email.clone(),
+    pub async fn get_all(db: &Database) -> Result<Vec::<Self>> {
+        let mut users: Vec<User> = Vec::new();
+        let mut cursor = User::find(&db, None, None).await?;
+
+        while let Some(league) = cursor.next().await {
+            users.push(league.unwrap());
         }
+
+        Ok(users)
     }
 
-    pub async fn find_by_id(db: &Database, id: &ObjectId) -> Option<Self> {
-        User::find_one(&db, doc! { "_id": id }, None).await.unwrap()
+    pub async fn get_by_id(db: &Database, id: ID) -> Option<Self> {
+        let oid = ObjectId::with_string(&id).expect("Can't get id from String");
+        User::find_one(&db, doc! { "_id": oid }, None).await.unwrap()
     }
 
-    pub async fn find_by_username(db: &Database, username: &str) -> Option<Self> {
+    pub async fn get_by_username(db: &Database, username: &str) -> Option<Self> {
         User::find_one(&db, doc! { "username": username }, None)
             .await
             .unwrap()
     }
 }
 
-/// Available User info
+#[Object]
+impl User {
+    async fn id(&self) -> ID {
+        if let Some(id) = &self.id {
+            ID::from(id)
+        } else {
+            let crap = String::from("");
+            ID::from(crap)
+        }
+    }
+    async fn username(&self) -> &str {
+        &self.username
+    }
+    async fn email(&self) -> &str {
+        &self.email
+    }
+    async fn role(&self) -> &str {
+        &self.role
+    }
+}
+
+/*/// Available User info
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UserInfo {
     /// The ID of the user.
@@ -77,7 +102,7 @@ impl UserInfo {
     async fn username(&self) -> &str {
         &self.username
     }
-}
+}*/
 
 /// New User Input
 #[derive(Debug, Serialize, Deserialize)]
@@ -119,11 +144,4 @@ pub struct LoginResponse {
 #[derive(SimpleObject)]
 pub struct LogoutResponse {
     pub status: String,
-}
-
-#[derive(SimpleObject)]
-pub struct MeResponse {
-    pub username: String,
-    pub email: String,
-    pub role: String,
 }

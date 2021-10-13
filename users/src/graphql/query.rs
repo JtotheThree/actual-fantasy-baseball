@@ -5,14 +5,14 @@ use common::*;
 use async_graphql::*;
 use jsonwebtoken::TokenData;
 use wither::prelude::*;
-use wither::{bson::doc, bson::oid::ObjectId, mongodb::Database};
+use wither::{bson::doc, mongodb::Database};
 
 pub struct Query;
 
 #[Object(extends)]
 impl Query {
     /// Get current user info
-    async fn me(&self, ctx: &Context<'_>) -> Result<MeResponse> {
+    async fn me(&self, ctx: &Context<'_>) -> Result<User> {
         let redis_client: &redis::Client = ctx.data()?;
 
         let mut con = redis_client.get_connection()?;
@@ -22,32 +22,44 @@ impl Query {
 
         if let Some(current_user) = maybe_current_user {
             let db: &Database = ctx.data()?;
-            let oid = ObjectId::with_string(&current_user.id).expect("Can't convert user id string to ObjectId");
-            let user = User::find_by_id(db, &oid).await.unwrap();
-            Ok(MeResponse{
-                username: user.username.clone(),
-                email: user.email.clone(),
-                role: user.role.clone(),
-            })
+            let id: ID = ID::from(current_user.id);
+            let user = User::get_by_id(db, id).await.unwrap();
+
+            Ok(user)
         } else {
             Err("Not logged in".into())
         }
     }
 
+    async fn get_users(&self, ctx: &Context<'_>) -> Vec<User> {
+        let db: &Database = ctx.data().expect("Cannot connect to database");
+
+        let users = User::get_all(db).await.expect("Cannot get leagues");
+
+        users
+    }
+
+    async fn get_user(&self, ctx: &Context<'_>, id: ID) -> Result<User> {
+        let db: &Database = ctx.data().expect("Cannot connect to database");
+
+        let maybe_user = User::get_by_id(db, id).await;
+
+        if let Some(user) = maybe_user {
+            Ok(user)
+        } else {
+            Err("Can't get league by id".into())
+        }
+    }
+
     /// Get a user by its ID
     #[graphql(entity)]
-    async fn find_user_info_by_id(&self, ctx: &Context<'_>, id: ID) -> Result<UserInfo> {
-        let oid_result = ObjectId::with_string(&id.to_string());
-        if let Ok(oid) = oid_result {
-            let db: &Database = ctx.data()?;
-            let maybe_user = User::find_by_id(db, &oid).await;
-            if let Some(user) = maybe_user {
-                Ok(user.to_user_info())
-            } else {
-                Err("No user found".into())
-            }
+    async fn find_user_by_id(&self, ctx: &Context<'_>, id: ID) -> Result<User> {
+        let db: &Database = ctx.data()?;
+        let maybe_user = User::get_by_id(db, id).await;
+        if let Some(user) = maybe_user {
+            Ok(user)
         } else {
-            Err("Invalid ID".into())
+            Err("No user found".into())
         }
     }
 }
@@ -75,7 +87,7 @@ impl Mutation {
     async fn login(&self, ctx: &Context<'_>, credentials: LoginInput) -> Result<LoginResponse> {
         let db: &Database = ctx.data()?;
 
-        if let Some(user) = User::find_by_username(db, &credentials.username_or_email).await {
+        if let Some(user) = User::get_by_username(db, &credentials.username_or_email).await {
             let clear_password = &credentials.password;
             let hashed_password = &user.password;
 

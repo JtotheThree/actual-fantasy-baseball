@@ -4,6 +4,9 @@ version = "0.1.0"
 authors = ["John Mullins <johnmullins@gmail.com>"]
 edition = "2018"
 
+[[bin]]
+name = "leagues"
+
 [dependencies]
 
 common = { path = "../common" }

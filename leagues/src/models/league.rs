@@ -28,6 +28,10 @@ impl League {
             String::from("")
         }
     }
+
+    async fn name(&self) -> &str {
+        &self.name
+    }
 }
 
 impl League {
@@ -52,21 +56,21 @@ impl League {
         Ok(leagues)
     }
 
-    pub async fn find_by_id(db: &Database, id: ID) -> Option<Self> {
+    pub async fn get_by_id(db: &Database, id: ID) -> Option<Self> {
         let oid = ObjectId::with_string(&id).expect("Can't get id from String");
         League::find_one(&db, doc! { "_id": oid }, None).await.unwrap()
     }
 
-    pub async fn find_by_name(db: &Database, name: &str) -> Option<Self> {
+    pub async fn get_by_name(db: &Database, name: &str) -> Option<Self> {
         League::find_one(&db, doc! { "username": name }, None)
             .await
             .unwrap()
     }
 
-    pub async fn find_by_owner(db: &Database, owner_id: ID) -> Result<Vec::<Self>> {
+    pub async fn get_by_owner_id(db: &Database, owner_id: &ID) -> Result<Vec::<Self>> {
         let oid = ObjectId::with_string(&owner_id).expect("Can't get id from String");
         let mut leagues: Vec<League> = Vec::new();
-        let mut cursor = League::find(&db, doc! {"owner_id": oid }, None).await?;
+        let mut cursor = League::find(&db, doc! {"ownerId": oid }, None).await?;
 
         while let Some(league) = cursor.next().await {
             leagues.push(league.unwrap());

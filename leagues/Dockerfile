@@ -1,22 +1,29 @@
-FROM rust:1.55 as build
+# Install cargo-chef
+FROM rust:1.55 AS chef
+RUN cargo install cargo-chef
+RUN mkdir /usr/src/build/
+COPY common /usr/src/common
+WORKDIR /usr/src/build/
 
-ENV CARGO_TERM_COLOR always
-RUN apt-get update && apt-get install -y libpq-dev clang
-
-# create empty project for caching dependencies
-RUN USER=root cargo new --bin /build-dir/docker-build
-COPY /common/ /build-dir/common/
-WORKDIR /build-dir/docker-build
-COPY /Cargo.lock ./
-COPY /leagues/Cargo.toml ./
-# cache dependencies
-RUN cargo install --path . --locked
-
+# Prepare cargo-chef recipe
+FROM chef AS planner
+COPY Cargo.lock .
 COPY leagues/ .
-RUN cargo install --path .
+RUN cargo chef prepare --recipe-path recipe.json
 
-FROM debian:buster-slim as production
-RUN apt-get update && apt-get install -y libpq-dev curl
-COPY --from=build /usr/local/cargo/bin/leagues /usr/local/bin/leagues
-CMD ["leagues"]
+FROM chef AS build
+COPY --from=planner /usr/src/build/recipe.json recipe.json
+# Build dependencies
+RUN cargo chef cook --release --recipe-path recipe.json
+# Build application
+COPY common /usr/src/common
+COPY Cargo.lock .
+COPY leagues/ .
+RUN cargo build --release
+
+# Runtime
+FROM debian:buster-slim AS runtime
+WORKDIR app
+COPY --from=build /usr/src/build/target/release/leagues /usr/local/bin/
 EXPOSE 8001
+ENTRYPOINT ["/usr/local/bin/leagues"]
