@@ -12,11 +12,19 @@ use crate::types::*;
 
 use crate::routes::AppRoute;
 
+#[derive(Default)]
+struct SignupForm {
+    username: String,
+    email: String,
+    password: String,
+    confirm_password: String,
+}
+
 pub struct Signup {
     auth: Auth,
     error: Option<crate::error::Error>,
-    request: SignupInput,
-    response: Callback<Result<SignupResponseWrapper, Error>>,
+    request: SignupForm,
+    response: Callback<Result<signup::ResponseData, Error>>,
     task: Option<FetchTask>,
     props: Props,
     router_agent: Box<dyn Bridge<RouteAgent>>,
@@ -26,12 +34,12 @@ pub struct Signup {
 #[derive(PartialEq, Properties, Clone)]
 pub struct Props {
     /// Callback when user is logged in successfully
-    pub callback: Callback<UserInfo>,
+    pub callback: Callback<User>,
 }
 
 pub enum Msg {
     Request,
-    Response(Result<SignupResponseWrapper, Error>),
+    Response(Result<signup::ResponseData, Error>),
     Ignore,
     UpdateUsername(String),
     UpdateEmail(String),
@@ -48,7 +56,7 @@ impl Component for Signup {
             auth: Auth::new(),
             error: None,
             props,
-            request: SignupInput::default(),
+            request: SignupForm::default(),
             response: link.callback(Msg::Response),
             router_agent: RouteAgent::bridge(link.callback(|_| Msg::Ignore)),
             task: None,
@@ -62,13 +70,18 @@ impl Component for Signup {
                 if self.request.password != self.request.confirm_password {
                     self.error = Some(Error::ConfirmPasswordError)
                 } else {
-                    self.task = Some(self.auth.signup(self.request.clone(), self.response.clone()));
+                    let variables = signup::Variables {
+                        username: self.request.username.clone(),
+                        email: self.request.email.clone(),
+                        password: self.request.password.clone(),
+                    };
+                    self.task = Some(self.auth.signup(variables, self.response.clone()));
                 }
             }
-            Msg::Response(Ok(signup_info)) => {
+            Msg::Response(Ok(response)) => {
                 //error!{format!{"{:?}", user_info}};
                 // Set global token after logged in
-                if signup_info.signup.status == "success" {
+                if response.signup.id == "success" {
                     self.error = None;
                     self.task = None;
                     self.router_agent.send(ChangeRoute(AppRoute::Login.into()));

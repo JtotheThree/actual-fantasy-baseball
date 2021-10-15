@@ -31,8 +31,8 @@ use types::*;
 struct App {
     auth: Auth,
     current_route: Option<AppRoute>,
-    current_user: Option<UserInfo>,
-    current_user_response: Callback<Result<MeResponseWrapper, Error>>,
+    current_user: Option<User>,
+    current_user_response: Callback<Result<me::ResponseData, Error>>,
     current_user_task: Option<FetchTask>,
     #[allow(unused)]
     router_agent: Box<dyn Bridge<RouteAgent>>,
@@ -41,9 +41,9 @@ struct App {
 }
 
 pub enum Msg {
-    CurrentUserResponse(Result<MeResponseWrapper, Error>),
+    CurrentUserResponse(Result<me::ResponseData, Error>),
     Route(Route),
-    Authenticated(UserInfo),
+    Authenticated(User),
     Logout,
 }
 
@@ -80,10 +80,9 @@ impl Component for App {
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
             Msg::CurrentUserResponse(Ok(me)) => {
-                self.current_user = Some(UserInfo{
+                self.current_user = Some(User{
                     username: me.me.username,
                     email: me.me.email,
-                    token: "".to_string(),
                     role: me.me.role,
                 });
                 self.current_user_task = None;

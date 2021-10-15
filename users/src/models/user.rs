@@ -31,7 +31,8 @@ impl User {
         }
     }
 
-    pub async fn get_all(db: &Database) -> Result<Vec::<Self>> {
+    // query
+    pub async fn find_all(db: &Database) -> Result<Vec::<Self>> {
         let mut users: Vec<User> = Vec::new();
         let mut cursor = User::find(&db, None, None).await?;
 
@@ -42,12 +43,12 @@ impl User {
         Ok(users)
     }
 
-    pub async fn get_by_id(db: &Database, id: ID) -> Option<Self> {
+    pub async fn find_by_id(db: &Database, id: ID) -> Option<Self> {
         let oid = ObjectId::with_string(&id).expect("Can't get id from String");
         User::find_one(&db, doc! { "_id": oid }, None).await.unwrap()
     }
 
-    pub async fn get_by_username(db: &Database, username: &str) -> Option<Self> {
+    pub async fn find_by_username(db: &Database, username: &str) -> Option<Self> {
         User::find_one(&db, doc! { "username": username }, None)
             .await
             .unwrap()
@@ -75,56 +76,11 @@ impl User {
     }
 }
 
-/*/// Available User info
-#[derive(Debug, Serialize, Deserialize)]
-pub struct UserInfo {
-    /// The ID of the user.
-    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
-    pub id: Option<ObjectId>,
-    /// The username.
-    pub username: String,
-    /// Role
-    pub role: String,
-    /// Email
-    pub email: String,
-}
-
-#[Object]
-impl UserInfo {
-    async fn id(&self) -> String {
-        if let Some(id) = &self.id {
-            id.clone().to_string()
-        } else {
-            String::from("")
-        }
-    }
-
-    async fn username(&self) -> &str {
-        &self.username
-    }
-}*/
-
-/// New User Input
-#[derive(Debug, Serialize, Deserialize)]
-pub struct UserInput {
-    /// The new user username, must be unique.
-    pub username: String,
-    /// The new user password.
-    pub password: String,
-    // User email
-    pub email: String,
-}
-
 #[derive(InputObject)]
 pub struct SignupInput {
     pub username: String,
     pub email: String,
     pub password: String,
-}
-
-#[derive(SimpleObject)]
-pub struct SignupResponse {
-    pub status: String,
 }
 
 #[derive(InputObject)]

@@ -15,8 +15,8 @@ use crate::routes::AppRoute;
 pub struct Login {
     auth: Auth,
     error: Option<crate::error::Error>,
-    request: LoginInput,
-    response: Callback<Result<LoginResponseWrapper, Error>>,
+    request: login::Variables,
+    response: Callback<Result<login::ResponseData, Error>>,
     task: Option<FetchTask>,
     props: Props,
     router_agent: Box<dyn Bridge<RouteAgent>>,
@@ -26,12 +26,12 @@ pub struct Login {
 #[derive(PartialEq, Properties, Clone)]
 pub struct Props {
     /// Callback when user is logged in successfully
-    pub callback: Callback<UserInfo>,
+    pub callback: Callback<User>,
 }
 
 pub enum Msg {
     Request,
-    Response(Result<LoginResponseWrapper, Error>),
+    Response(Result<login::ResponseData, Error>),
     Ignore,
     UpdateUsername(String),
     UpdatePassword(String),
@@ -46,7 +46,10 @@ impl Component for Login {
             auth: Auth::new(),
             error: None,
             props,
-            request: LoginInput::default(),
+            request: login::Variables {
+                username_or_email: "".to_string(),
+                password: "".to_string(),
+            },
             response: link.callback(Msg::Response),
             router_agent: RouteAgent::bridge(link.callback(|_| Msg::Ignore)),
             task: None,
@@ -57,18 +60,21 @@ impl Component for Login {
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
             Msg::Request => {
-                self.task = Some(self.auth.login(self.request.clone(), self.response.clone()));
+                self.task = Some(self.auth.login(login::Variables{
+                    username_or_email: self.request.username_or_email.clone(),
+                    password: self.request.password.clone(),
+                }, 
+                self.response.clone()));
             }
-            Msg::Response(Ok(login_info)) => {
+            Msg::Response(Ok(response)) => {
                 //error!{format!{"{:?}", user_info}};
                 // Set global token after logged in
-                set_token(Some(login_info.login.token.clone()));
+                set_token(Some(response.login.token.clone()));
 
-                self.props.callback.emit(UserInfo{
-                    username: login_info.login.username,
-                    email: login_info.login.email,
-                    role: login_info.login.role,
-                    token: login_info.login.token,
+                self.props.callback.emit(User{
+                    username: response.login.username,
+                    email: response.login.email,
+                    role: response.login.role,
                 });
 
                 self.error = None;
@@ -82,7 +88,7 @@ impl Component for Login {
                 self.task = None;
             }
             Msg::UpdateUsername(username) => {
-                self.request.username = username;
+                self.request.username_or_email = username;
             }
             Msg::UpdatePassword(password) => {
                 self.request.password = password;
@@ -122,7 +128,7 @@ impl Component for Login {
                 <div class="flex flex-col py-3">
                     <input
                         class="input"
-                        value=self.request.username.clone()
+                        value=self.request.username_or_email.clone()
                         oninput=oninput_username
                     />
                     <label class="px-4 pb-2 font-semibold">

@@ -5,12 +5,12 @@ use yew::services::fetch::FetchTask;
 use crate::error::Error;
 use crate::services::{set_token, Auth};
 use crate::routes::AppRoute;
-use crate::types::{UserInfo, LogoutResponseWrapper};
+use crate::types::*;
 
 pub struct Header {
     auth: Auth,
     props: Props,
-    logout_response: Callback<Result<LogoutResponseWrapper, Error>>,
+    logout_response: Callback<Result<logout::ResponseData, Error>>,
     router_agent: Box<dyn Bridge<RouteAgent>>,
     task: Option<FetchTask>,
     link: ComponentLink<Self>,
@@ -19,12 +19,12 @@ pub struct Header {
 #[derive(Properties, Clone)]
 pub struct Props {
     pub callback: Callback<()>,
-    pub current_user: Option<UserInfo>,
+    pub current_user: Option<User>,
 }
 
 pub enum Msg {
     Logout,
-    LogoutResponse(Result<LogoutResponseWrapper, Error>),
+    LogoutResponse(Result<logout::ResponseData, Error>),
     Ignore,
 }
 
@@ -78,8 +78,8 @@ impl Component for Header {
                 </a>
                 </RouterAnchor<AppRoute>>
                 {
-                    if let Some(user_info) = &self.props.current_user {
-                        self.logged_in_view(&user_info)
+                    if let Some(user) = &self.props.current_user {
+                        self.logged_in_view(&user)
                     } else {
                         self.logged_out_view()
                     }
@@ -118,7 +118,7 @@ impl Header {
         }
     }
 
-    fn logged_in_view(&self, user_info: &UserInfo) -> Html {
+    fn logged_in_view(&self, user: &User) -> Html {
         let onclick = self.link.callback(|_| Msg::Logout);
 
         html! {
@@ -134,7 +134,7 @@ impl Header {
                     </RouterAnchor<AppRoute>>
                 </li>
                 <li>
-                    <a class="md:p-4 py-2 block hover:text-red-800" href="#">{ user_info.username.clone() }</a>
+                    <a class="md:p-4 py-2 block hover:text-red-800" href="#">{ user.username.clone() }</a>
                 </li>
                 <li>
                     <a class="md:p-4 py-2 block hover:text-red-800" href="#" onclick=onclick>{ "Logout" }</a>

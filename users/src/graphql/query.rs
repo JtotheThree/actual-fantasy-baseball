@@ -23,7 +23,7 @@ impl Query {
         if let Some(current_user) = maybe_current_user {
             let db: &Database = ctx.data()?;
             let id: ID = ID::from(current_user.id);
-            let user = User::get_by_id(db, id).await.unwrap();
+            let user = User::find_by_id(db, id).await.unwrap();
 
             Ok(user)
         } else {
@@ -31,18 +31,18 @@ impl Query {
         }
     }
 
-    async fn get_users(&self, ctx: &Context<'_>) -> Vec<User> {
+    async fn users(&self, ctx: &Context<'_>) -> Vec<User> {
         let db: &Database = ctx.data().expect("Cannot connect to database");
 
-        let users = User::get_all(db).await.expect("Cannot get leagues");
+        let users = User::find_all(db).await.expect("Cannot get leagues");
 
         users
     }
 
-    async fn get_user(&self, ctx: &Context<'_>, id: ID) -> Result<User> {
+    async fn user(&self, ctx: &Context<'_>, id: ID) -> Result<User> {
         let db: &Database = ctx.data().expect("Cannot connect to database");
 
-        let maybe_user = User::get_by_id(db, id).await;
+        let maybe_user = User::find_by_id(db, id).await;
 
         if let Some(user) = maybe_user {
             Ok(user)
@@ -55,11 +55,41 @@ impl Query {
     #[graphql(entity)]
     async fn find_user_by_id(&self, ctx: &Context<'_>, id: ID) -> Result<User> {
         let db: &Database = ctx.data()?;
-        let maybe_user = User::get_by_id(db, id).await;
+        let maybe_user = User::find_by_id(db, id).await;
         if let Some(user) = maybe_user {
             Ok(user)
         } else {
             Err("No user found".into())
+        }
+    }
+
+/*    #[graphql(entity)]
+    async fn find_league_by_id(&self, id: ID) -> League {
+        League { id }
+    }
+*/
+}
+
+struct League {
+    id: ID,
+}
+
+#[Object(extends)]
+impl League {
+    #[graphql(external)]
+    async fn id(&self) -> &ID {
+        &self.id
+    }
+
+    async fn user(&self, ctx: &Context<'_>) -> Result<User> {
+        let db: &Database = ctx.data().expect("Cannot connect to database");
+
+        let maybe_user = User::find_by_id(db, self.id.clone()).await;
+
+        if let Some(user) = maybe_user {
+            Ok(user)
+        } else {
+            Err("Can't get user".into())
         }
     }
 }
@@ -68,7 +98,7 @@ pub struct Mutation;
 
 #[Object]
 impl Mutation {
-    async fn signup(&self, ctx: &Context<'_>, new_user: SignupInput) -> Result<SignupResponse, Error> {
+    async fn signup(&self, ctx: &Context<'_>, new_user: SignupInput) -> Result<User, Error> {
         let db: &Database = ctx.data()?;
 
         let password = hash::hash_password(&new_user.password);
@@ -76,9 +106,7 @@ impl Mutation {
         let mut user = User::new_user(&new_user.username, &new_user.email, &password);
 
         if let Ok(_) = user.save(&db, None).await {
-            Ok(SignupResponse{
-                status: "success".to_string()
-            })
+            Ok(user)
         } else {
             Err(Error::new("Can't signup user"))
         }
@@ -87,7 +115,7 @@ impl Mutation {
     async fn login(&self, ctx: &Context<'_>, credentials: LoginInput) -> Result<LoginResponse> {
         let db: &Database = ctx.data()?;
 
-        if let Some(user) = User::get_by_username(db, &credentials.username_or_email).await {
+        if let Some(user) = User::find_by_username(db, &credentials.username_or_email).await {
             let clear_password = &credentials.password;
             let hashed_password = &user.password;
 

@@ -51,9 +51,9 @@ pub fn is_authenticated() -> bool {
 
 /// Http request
 #[derive(Default, Debug)]
-pub struct GraphQLRequests {}
+pub struct GraphQL {}
 
-impl GraphQLRequests {
+impl GraphQL {
     pub fn new() -> Self {
         Self {}
     }
@@ -70,10 +70,12 @@ impl GraphQLRequests {
         B: Into<Text> + std::fmt::Debug,
     {
         let handler = move |response: Response<Text>| {
-            if let (meta, Ok(data)) = response.into_parts() {
+            if let (meta, Ok(data))  = response.into_parts() {
                 debug!("Response: {:?}", data);
                 if meta.status.is_success() {
                     let resp: Result<ResponseWrapper<T>, _> = serde_json::from_str(&data);
+
+                    debug!("RESPONSO: {:?}", resp);
 
                     if let Ok(resp) = resp {
                         if let Some(data) = resp.data {

@@ -1,82 +1,44 @@
 use serde::{Deserialize, Serialize};
 
+use graphql_client::GraphQLQuery;
+
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "./graphql/schema.graphql",
+    query_path = "./graphql/auth/login.graphql",
+    variable_derives = "Debug, Clone",
+    response_derives = "Debug, Clone"
+)]
+pub struct Login;
+
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "./graphql/schema.graphql",
+    query_path = "./graphql/auth/logout.graphql",
+    response_derives = "Debug, Clone"
+)]
+pub struct Logout;
+
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "./graphql/schema.graphql",
+    query_path = "./graphql/auth/signup.graphql",
+    response_derives = "Debug, Clone"
+)]
+pub struct Signup;
+
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "./graphql/schema.graphql",
+    query_path = "./graphql/auth/me.graphql",
+    response_derives = "Debug, Clone"
+)]
+pub struct Me;
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct UserInfo {
+pub struct User {
     pub username: String,
     pub email: String,
     pub role: String,
-    pub token: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct LoginInput {
-    pub username: String,
-    pub password: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct LoginResponse {
-    pub username: String,
-    pub email: String,
-    pub role: String,
-    pub token: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct LoginResponseWrapper {
-    pub login: LoginResponse,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct LogoutResponse {
-    pub status: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct LogoutResponseWrapper {
-    pub logout: LogoutResponse,
-}
-
-
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct SignupInput {
-    pub username: String,
-    pub email: String,
-    pub password: String,
-    pub confirm_password: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct SignupResponse {
-    pub status: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct SignupResponseWrapper {
-    pub signup: SignupResponse,
-}
-
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct MeResponse {
-    pub id: String,
-    pub username: String,
-    pub email: String,
-    pub role: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct MeResponseWrapper {
-    pub me: MeResponse,
 }

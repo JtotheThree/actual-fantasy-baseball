@@ -8,6 +8,9 @@ mutation Signup(
         email: $email
         password: $password
     }) {
-        status
+        id
+        username
+        email
+        role
     }
 }
