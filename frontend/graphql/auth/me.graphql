@@ -4,5 +4,9 @@ query Me{
     username
     email
     role
-  }
+    selectedLeague {
+        id
+        name
+    }
+  } 
 }

@@ -1,4 +1,5 @@
 module.exports = {
+    mode: 'jit',
     purge: {
         mode: "all",
         content: [
@@ -23,7 +24,9 @@ module.exports = {
             },
         }
     },
-    variants: {},
+    variants: {
+        display:['group-hover']
+    },
     plugins: [],
 };
 

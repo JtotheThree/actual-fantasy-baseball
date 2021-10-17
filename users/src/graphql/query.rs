@@ -63,15 +63,10 @@ impl Query {
         }
     }
 
-/*    #[graphql(entity)]
+    #[graphql(entity)]
     async fn find_league_by_id(&self, id: ID) -> League {
         League { id }
     }
-*/
-}
-
-struct League {
-    id: ID,
 }
 
 #[Object(extends)]
@@ -131,10 +126,11 @@ impl Mutation {
                 let token = generate_token(&user_id, &user.username, &user.role, &session, &CONFIG.session.secret);
 
                 Ok(LoginResponse{
+                    id: ID::from(user_id),
                     username: user.username.clone(),
                     email: user.email.clone(),
                     role: user.role.clone(),
-                    token: token,
+                    token,
                 })
             } else {
                 Err(Error::new("Incorrect password"))
@@ -155,5 +151,22 @@ impl Mutation {
         Ok(LogoutResponse{
             status: "Success".to_string(),
         })
+    }
+
+    // State
+    async fn select_league(&self, ctx: &Context<'_>, id: ID) -> Result<League> {
+        let redis_client: &redis::Client = ctx.data()?;
+
+        let mut con = redis_client.get_connection()?;
+        let token_data = ctx.data_opt::<TokenData<Claims>>().unwrap();
+    
+        let maybe_current_user = get_current_user(&mut con, token_data);
+
+        if let Some(current_user) = maybe_current_user {
+            let db: &Database = ctx.data()?;
+            Ok(User::select_league(db, ID::from(current_user.id), id).await.expect("Can't select league"))
+        } else {
+            Err("Not logged in".into())
+        }
     }
 }

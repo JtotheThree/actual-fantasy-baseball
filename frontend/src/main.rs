@@ -80,10 +80,21 @@ impl Component for App {
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
             Msg::CurrentUserResponse(Ok(me)) => {
+                let mut selected_league: Option<League> = None;
+
+                if let Some(league) = me.me.selected_league {
+                    selected_league = Some(League {
+                        id: league.id,
+                        name: league.name,
+                    });
+                }
+
                 self.current_user = Some(User{
+                    id: me.me.id,
                     username: me.me.username,
                     email: me.me.email,
                     role: me.me.role,
+                    selected_league,
                 });
                 self.current_user_task = None;
             }
@@ -94,7 +105,11 @@ impl Component for App {
                 self.current_route = AppRoute::switch(route)
             }
             Msg::Authenticated(user_info) => {
+                // TODO: Clean this up, no need do user info twice on login
                 self.current_user = Some(user_info);
+
+                let task = self.auth.current(self.current_user_response.clone());
+                self.current_user_task = Some(task);
             }
             Msg::Logout => {
                 self.current_user = None;

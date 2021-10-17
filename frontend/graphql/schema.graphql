@@ -26,6 +26,7 @@ type League {
   name: String!
   owner: User!
   users: [User!]!
+  user: User!
 }
 
 input LoginInput {
@@ -34,6 +35,7 @@ input LoginInput {
 }
 
 type LoginResponse {
+  id: ID!
   username: String!
   email: String!
   role: String!
@@ -48,6 +50,7 @@ type Mutation {
   signup(newUser: SignupInput!): User!
   login(credentials: LoginInput!): LoginResponse!
   logout: LogoutResponse!
+  selectLeague(id: ID!): League!
   createLeague(input: CreateLeagueInput!): League!
   addUserToLeague(input: AddUserInput!): League!
 }
@@ -72,6 +75,7 @@ type User {
   username: String!
   email: String!
   role: String!
+  selectedLeague: League
   joinedLeagues: [League!]!
   ownedLeagues: [League!]!
 }

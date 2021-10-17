@@ -72,9 +72,11 @@ impl Component for Login {
                 set_token(Some(response.login.token.clone()));
 
                 self.props.callback.emit(User{
+                    id: response.login.id,
                     username: response.login.username,
                     email: response.login.email,
                     role: response.login.role,
+                    selected_league: None,
                 });
 
                 self.error = None;

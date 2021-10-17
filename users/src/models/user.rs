@@ -1,3 +1,4 @@
+use crate::models::League;
 use async_graphql::*;
 use futures::stream::StreamExt;
 use serde::{Deserialize, Serialize};
@@ -18,6 +19,9 @@ pub struct User {
     pub email: String,
     pub password: String,
     pub role: String,
+
+    // move to details, "state"?
+    pub selected_league: Option<ObjectId>,
 }
 
 impl User {
@@ -28,6 +32,7 @@ impl User {
             email: String::from(email),
             password: String::from(password),
             role: String::from("user"),
+            selected_league: None,
         }
     }
 
@@ -53,6 +58,23 @@ impl User {
             .await
             .unwrap()
     }
+
+    pub async fn select_league(db: &Database, user_id: ID, league_id: ID) -> Result<League> {
+       let query = doc! {
+            "_id": ObjectId::with_string(&user_id).expect("Can't get id from String"),
+        };
+
+        if let Some(mut user) = User::find_one(db, Some(query), None).await? {
+            user.selected_league = Some(ObjectId::with_string(&league_id).expect("Can't get id from String"));
+            user.save(db, None).await?;
+
+            Ok(League{
+                id: league_id
+            })
+        } else {
+            Err(format!("User with id: {:?} not found", &user_id).into())
+        }
+    }
 }
 
 #[Object]
@@ -74,6 +96,15 @@ impl User {
     async fn role(&self) -> &str {
         &self.role
     }
+    async fn selected_league(&self) -> Option<League> {
+        if let Some(selected_league) = &self.selected_league {
+            Some(League{
+                id: ID::from(selected_league),
+            })
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(InputObject)]
@@ -91,6 +122,7 @@ pub struct LoginInput {
 
 #[derive(SimpleObject)]
 pub struct LoginResponse {
+    pub id: ID,
     pub username: String,
     pub email: String,
     pub role: String,

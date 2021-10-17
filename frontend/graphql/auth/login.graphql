@@ -6,6 +6,7 @@ mutation Login(
         usernameOrEmail: $usernameOrEmail
         password: $password
     }) {
+    	id
         username
         email
         role

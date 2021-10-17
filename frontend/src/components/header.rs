@@ -2,6 +2,7 @@ use yew::{html, Component, ComponentLink, Html, Properties, ShouldRender, Callba
 use yew_router::{agent::RouteRequest::ChangeRoute, prelude::*};
 use yew::services::fetch::FetchTask;
 
+use crate::components::league_dropdown::LeagueDropdown;
 use crate::error::Error;
 use crate::services::{set_token, Auth};
 use crate::routes::AppRoute;
@@ -72,11 +73,20 @@ impl Component for Header {
         html! {
             <header class="border-solid border-b-2 border-black shadow-md">
             <nav class="flex flex-wrap items-center justify-between w-full py-4 md:py-0 px-4 text-2xl bg-paper">
-                <RouterAnchor<AppRoute> route=AppRoute::Home>
-                <a class="font-title" href="#">
-                    { "Fantasy Baseball" }
-                </a>
-                </RouterAnchor<AppRoute>>
+                <ul class="flex flex-wrap">
+                    <RouterAnchor<AppRoute> route=AppRoute::Home>
+                        <a class="font-title" href="#">
+                            { "Fantasy Baseball" }
+                        </a>
+                    </RouterAnchor<AppRoute>>
+                    {
+                        if let Some(_) = &self.props.current_user {
+                            html!{ <LeagueDropdown /> }
+                        } else {
+                            html!{}
+                        }
+                    }
+                </ul>
                 {
                     if let Some(user) = &self.props.current_user {
                         self.logged_in_view(&user)

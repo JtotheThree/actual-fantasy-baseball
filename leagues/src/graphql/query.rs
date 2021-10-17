@@ -20,7 +20,7 @@ impl Query {
     async fn league(&self, ctx: &Context<'_>, id: ID) -> Result<League> {
         let db: &Database = ctx.data().expect("Cannot connect to database");
 
-        let maybe_league = League::find_by_id(db, id).await;
+        let maybe_league = League::find_by_id(db, &id).await;
 
         if let Some(league) = maybe_league {
             Ok(league)
@@ -34,16 +34,16 @@ impl Query {
         User { id }
     }
 
-/*    #[graphql(entity)]
+    #[graphql(entity)]
     async fn find_league_by_id(&self, ctx: &Context<'_>, id: ID) -> Result<League> {
         let db: &Database = ctx.data()?;
-        let maybe_league = League::find_by_id(db, id).await;
+        let maybe_league = League::find_by_id(db, &id).await;
         if let Some(league) = maybe_league {
             Ok(league)
         } else {
             Err("No user found".into())
         }
-    }*/
+    }
 }
 
 #[Object(extends, cache_control(max_age = 60))]

@@ -76,8 +76,8 @@ impl League {
         Ok(leagues)
     }
 
-    pub async fn find_by_id(db: &Database, id: ID) -> Option<Self> {
-        let oid = ObjectId::with_string(&id).expect("Can't get id from String");
+    pub async fn find_by_id(db: &Database, id: &ID) -> Option<Self> {
+        let oid = ObjectId::with_string(id).expect("Can't get id from String");
         League::find_one(&db, doc! { "_id": oid }, None).await.unwrap()
     }
 

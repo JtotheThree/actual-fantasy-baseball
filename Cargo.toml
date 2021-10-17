@@ -3,6 +3,5 @@ members = [
     "common",
     "frontend",
     "leagues",
-    "teams",
     "users",
 ]

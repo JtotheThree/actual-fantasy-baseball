@@ -1,12 +1,12 @@
+use graphql_client::GraphQLQuery;
 use serde::{Deserialize, Serialize};
 
-use graphql_client::GraphQLQuery;
+use crate::types::League;
 
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "./graphql/schema.graphql",
     query_path = "./graphql/auth/login.graphql",
-    variable_derives = "Debug, Clone",
     response_derives = "Debug, Clone"
 )]
 pub struct Login;
@@ -38,7 +38,9 @@ pub struct Me;
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct User {
+    pub id: String,
     pub username: String,
     pub email: String,
     pub role: String,
+    pub selected_league: Option<League>,
 }
