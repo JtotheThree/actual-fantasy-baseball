@@ -13,8 +13,10 @@ use console_error_panic_hook::set_once as set_panic_hook;
 use yew::services::fetch::FetchTask;
 use yew::prelude::*;
 use yew_router::prelude::*;
+use yewtil::store::{Bridgeable, ReadOnly, StoreWrapper};
 //use yew_router::components::RouterAnchor;
 
+use crate::agents::{State, state::Request};
 use crate::components::{header::Header};
 use error::Error;
 use routes::{
@@ -30,21 +32,19 @@ use types::*;
 
 struct App {
     auth: Auth,
-    current_route: Option<AppRoute>,
-    current_user: Option<User>,
-    current_user_response: Callback<Result<me::ResponseData, Error>>,
-    current_user_task: Option<FetchTask>,
+    route: Option<AppRoute>,
+    user_response: Callback<Result<me::ResponseData, Error>>,
+    user_task: Option<FetchTask>,
+    state: Box<dyn Bridge<StoreWrapper<State>>>,
     #[allow(unused)]
     router_agent: Box<dyn Bridge<RouteAgent>>,
     //socket_agent: Box<dyn Bridge<agents::socket::Socket>>,
-    link: ComponentLink<Self>,
 }
 
 pub enum Msg {
-    CurrentUserResponse(Result<me::ResponseData, Error>),
+    StateMsg(ReadOnly<State>),
+    UserResponse(Result<me::ResponseData, Error>),
     Route(Route),
-    Authenticated(User),
-    Logout,
 }
 
 
@@ -53,66 +53,64 @@ impl Component for App {
     type Properties = ();
 
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
+        let callback = link.callback(Msg::StateMsg);
+
         //let socket_agent = agents::socket::Socket::bridge(link.callback(|_| {}));
         let router_agent = RouteAgent::bridge(link.callback(Msg::Route));
         let route_service: RouteService = RouteService::new();
         let route = route_service.get_route();
         Self {
             auth: Auth::new(),
-            current_route: AppRoute::switch(route),
+            state: State::bridge(callback),
+            route: AppRoute::switch(route),
             router_agent,
-            current_user: None,
-            current_user_response: link.callback(Msg::CurrentUserResponse),
-            current_user_task: None,
+            user_response: link.callback(Msg::UserResponse),
+            user_task: None,
             //socket_agent: socket_agent,
-            link,
         }
     }
 
     fn rendered(&mut self, first_render: bool) {
         // Get current user info if a token is available when mounted
         if first_render && is_authenticated() {
-            let task = self.auth.current(self.current_user_response.clone());
-            self.current_user_task = Some(task);
+            let task = self.auth.current(self.user_response.clone());
+            self.user_task = Some(task);
         }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
-            Msg::CurrentUserResponse(Ok(me)) => {
+            // We don't really care about callbacks here, can we handle this differently?
+            Msg::StateMsg(_) => {
+                return false;
+            }
+            Msg::UserResponse(Ok(me)) => {
                 let mut selected_league: Option<League> = None;
 
                 if let Some(league) = me.me.selected_league {
                     selected_league = Some(League {
                         id: league.id,
                         name: league.name,
+                        team: None,
                     });
                 }
 
-                self.current_user = Some(User{
+                self.state.send(Request::UpdateUser(Some(User {
                     id: me.me.id,
                     username: me.me.username,
                     email: me.me.email,
                     role: me.me.role,
-                    selected_league,
-                });
-                self.current_user_task = None;
+                    selected_league,                    
+                })));
+
+                self.user_task = None;
             }
-            Msg::CurrentUserResponse(Err(_)) => {
-                self.current_user_task = None;
+            Msg::UserResponse(Err(err)) => {
+                error!("Me response error: {:?}", err);
+                self.user_task = None;
             }
             Msg::Route(route) => {
-                self.current_route = AppRoute::switch(route)
-            }
-            Msg::Authenticated(user_info) => {
-                // TODO: Clean this up, no need do user info twice on login
-                self.current_user = Some(user_info);
-
-                let task = self.auth.current(self.current_user_response.clone());
-                self.current_user_task = Some(task);
-            }
-            Msg::Logout => {
-                self.current_user = None;
+                self.route = AppRoute::switch(route)
             }
         }
         true
@@ -124,21 +122,17 @@ impl Component for App {
 
     fn view(&self) -> Html {
         //type Anchor = RouterAnchor<Route>;
-
-        let callback_login = self.link.callback(Msg::Authenticated);
-        let callback_signup = self.link.callback(Msg::Authenticated);
-        let callback_logout = self.link.callback(|_| Msg::Logout);
-
         html! {
             <>
-                <Header current_user=self.current_user.clone() callback=callback_logout/>
+                <Header />
                 {
                     // Routes to render sub components
-                    if let Some(route) = &self.current_route {
+                    if let Some(route) = &self.route {
                         match route {
-                            AppRoute::Login => html!{<Login callback=callback_login />},
-                            AppRoute::Signup => html!(<Signup callback=callback_signup />),
+                            AppRoute::Login => html!{<Login />},
+                            AppRoute::Signup => html!{<Signup />},
                             AppRoute::Rules => html!{<Rules />},
+                            AppRoute::League(id) => html!{<routes::league::League league_id=id.clone() />},
                             AppRoute::Home => html!{<Home />},
                         }
                     } else {

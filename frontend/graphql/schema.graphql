@@ -21,6 +21,11 @@ input CreateLeagueInput {
   name: String!
 }
 
+input CreateTeamInput {
+  name: String!
+  leagueId: ID!
+}
+
 type League {
   id: ID!
   name: String!
@@ -53,6 +58,7 @@ type Mutation {
   selectLeague(id: ID!): League!
   createLeague(input: CreateLeagueInput!): League!
   addUserToLeague(input: AddUserInput!): League!
+  createTeam(input: CreateTeamInput!): Team!
 }
 
 type Query {
@@ -62,12 +68,22 @@ type Query {
   user(id: ID!): User!
   leagues: [League!]!
   league(id: ID!): League!
+  teams: [Team!]!
+  team(id: ID!): Team!
 }
 
 input SignupInput {
   username: String!
   email: String!
   password: String!
+}
+
+# Object Implementations
+type Team {
+  id: ID!
+  name: String!
+  owner: User!
+  league: League!
 }
 
 type User {
@@ -78,4 +94,5 @@ type User {
   selectedLeague: League
   joinedLeagues: [League!]!
   ownedLeagues: [League!]!
+  teams: [Team!]!
 }

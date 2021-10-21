@@ -35,7 +35,7 @@ pub struct Signup;
 )]
 pub struct Me;
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct User {
     pub id: String,

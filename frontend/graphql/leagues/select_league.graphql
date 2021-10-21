@@ -1,0 +1,8 @@
+mutation SelectLeague(
+    $id: ID!
+) {
+    selectLeague(id: $id) {
+        id
+	name
+    }
+}

@@ -12,6 +12,7 @@ console_error_panic_hook = "0.1.6"
 
 yew = "0.18.0"
 yew-router = "0.15.0"
+yewtil = "0.4.0"
 
 graphql_client = { version="0.10.0", features = ["reqwest"]}
 serde = { version="1.0.130", features=["derive"] }

@@ -4,10 +4,12 @@ extern crate log;
 mod config;
 mod graphql;
 mod models;
+mod routes;
 
 use crate::config::CONFIG;
-use crate::graphql::{index, Mutation, Query};
+use crate::graphql::{AppSchema, Mutation, Query};
 use crate::models::League;
+use crate::routes::index;
 
 use actix_web::{middleware, web, App, HttpServer};
 use async_graphql::{
@@ -16,9 +18,6 @@ use async_graphql::{
 };
 use wither::mongodb::{Client, Database};
 use wither::Model;
-
-
-pub type LeaguesSchema = Schema<Query, Mutation, EmptySubscription>;
 
 
 async fn init_db() -> Database {
@@ -46,7 +45,7 @@ async fn init_redis() -> redis::Client {
     client
 }
 
-fn init_graphql(db: &Database, redis: &redis::Client) -> LeaguesSchema {
+fn init_graphql(db: &Database, redis: &redis::Client) -> AppSchema {
     let schema = Schema::build(Query, Mutation, EmptySubscription)
         .data(db.clone())
         .data(redis.clone())

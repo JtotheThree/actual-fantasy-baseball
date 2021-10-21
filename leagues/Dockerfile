@@ -7,6 +7,7 @@ WORKDIR /usr/src/build/
 
 # Prepare cargo-chef recipe
 FROM chef AS planner
+# TODO: Remove the cargo workspace unfortunately, changing any microservices Cargo.toml causes Cargo.lock to change and rebuild EVERYTHING
 COPY Cargo.lock .
 COPY leagues/ .
 RUN cargo chef prepare --recipe-path recipe.json

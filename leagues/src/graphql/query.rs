@@ -5,6 +5,42 @@ use jsonwebtoken::TokenData;
 use wither::prelude::*;
 use wither::{mongodb::Database};
 
+pub type AppSchema = Schema<Query, Mutation, EmptySubscription>;
+
+#[Object]
+impl League {
+    async fn id(&self) -> ID {
+        if let Some(id) = &self.id {
+            ID::from(id)
+        } else {
+            ID::from("")
+        }
+    }
+
+    async fn name(&self) -> &str {
+        &self.name
+    }
+
+    async fn owner(&self) -> User {
+        User{ id: ID::from(&self.owner) }
+    }
+
+    async fn users(&self) -> Vec<User> {
+        self.users.iter().map(|id| User{
+            id: ID::from(id)
+        })
+        .collect()
+    }
+}
+
+pub struct User {
+    pub id: ID,
+}
+
+pub struct Team {
+    pub id: ID,
+}
+
 pub struct Query;
 
 #[Object(extends, cache_control(max_age = 60))]
@@ -78,6 +114,15 @@ impl User {
     }
 }
 
+#[Object(extends, cache_control(max_age = 60))]
+impl Team {
+    #[graphql(external)]
+    async fn id(&self) -> &ID {
+        &self.id
+    }
+}
+
+
 pub struct Mutation;
 
 #[Object(extends, cache_control(max_age = 60))]
@@ -117,4 +162,17 @@ impl Mutation {
             Err("Cannot insert user into league".into())
         }
     }
+}
+
+
+
+#[derive(Clone, InputObject)]
+pub struct CreateLeagueInput {
+    pub name: String,
+}
+
+#[derive(Clone, InputObject)]
+pub struct AddUserInput {
+    pub id: String,
+    pub user_id: String, 
 }

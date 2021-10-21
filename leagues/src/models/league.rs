@@ -1,4 +1,3 @@
-use crate::models::User;
 use async_graphql::*;
 use futures::stream::{StreamExt, TryStreamExt};
 use serde::{Deserialize, Serialize};
@@ -24,33 +23,6 @@ pub struct League {
     pub users: Vec<ObjectId>,
 }
 
-#[Object]
-impl League {
-    async fn id(&self) -> ID {
-        if let Some(id) = &self.id {
-            ID::from(id)
-        } else {
-            let crap = String::from("");
-            ID::from(crap)
-        }
-    }
-
-    async fn name(&self) -> &str {
-        &self.name
-    }
-
-    async fn owner(&self) -> User {
-        User{ id: ID::from(&self.owner) }
-    }
-
-    async fn users(&self) -> Vec<User> {
-        self.users.iter().map(|id| User{
-            id: ID::from(id)
-        })
-        .collect()
-    }
-}
-
 impl League {
     pub fn new_league(name: &str, owner_id: &str) -> Self {
         let oid = ObjectId::with_string(&owner_id).expect("Can't get id from String");
@@ -66,12 +38,8 @@ impl League {
     }
 
     pub async fn find_all(db: &Database) -> Result<Vec::<Self>> {
-        let mut leagues: Vec<League> = Vec::new();
-        let mut cursor = League::find(&db, None, None).await?;
-
-        while let Some(league) = cursor.next().await {
-            leagues.push(league.unwrap());
-        }
+        let cursor = League::find(&db, None, None).await?;
+        let leagues: Vec<League> = cursor.try_collect().await?;
 
         Ok(leagues)
     }
@@ -122,15 +90,4 @@ impl League {
         }
     }
     
-}
-
-#[derive(Clone, InputObject)]
-pub struct CreateLeagueInput {
-    pub name: String,
-}
-
-#[derive(Clone, InputObject)]
-pub struct AddUserInput {
-    pub id: String,
-    pub user_id: String, 
 }

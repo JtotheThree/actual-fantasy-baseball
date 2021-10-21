@@ -42,3 +42,17 @@ services:
       - ./leagues/environments/:/app/environments/
     ports:
       - "8001:8001"
+
+  # TEAMS service
+  teams:
+    build:
+      context: .
+      dockerfile: ./teams/Dockerfile
+    container_name: teams
+    restart: always
+    environment:
+      RUN_MODE: docker
+    volumes:
+      - ./teams/environments/:/app/environments/
+    ports:
+      - "8002:8002"

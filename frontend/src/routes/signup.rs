@@ -1,8 +1,5 @@
+use yew::prelude::*;
 use yew::services::fetch::FetchTask;
-use yew::{
-    agent::Bridged, html, Bridge, Callback, Component, ComponentLink, FocusEvent, Html, InputData,
-    Properties, ShouldRender,
-};
 use yew_router::{agent::RouteRequest::ChangeRoute, prelude::*};
 
 use crate::components::list_errors::ListErrors;
@@ -26,16 +23,15 @@ pub struct Signup {
     request: SignupForm,
     response: Callback<Result<signup::ResponseData, Error>>,
     task: Option<FetchTask>,
-    props: Props,
     router_agent: Box<dyn Bridge<RouteAgent>>,
     link: ComponentLink<Self>,
 }
 
-#[derive(PartialEq, Properties, Clone)]
+/*#[derive(PartialEq, Properties, Clone)]
 pub struct Props {
     /// Callback when user is logged in successfully
     pub callback: Callback<User>,
-}
+}*/
 
 pub enum Msg {
     Request,
@@ -49,13 +45,12 @@ pub enum Msg {
 
 impl Component for Signup {
     type Message = Msg;
-    type Properties = Props;
+    type Properties = ();
 
-    fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
+    fn create(_props: Self::Properties, link: ComponentLink<Self>) -> Self {
         Signup {
             auth: Auth::new(),
             error: None,
-            props,
             request: SignupForm::default(),
             response: link.callback(Msg::Response),
             router_agent: RouteAgent::bridge(link.callback(|_| Msg::Ignore)),
@@ -115,9 +110,8 @@ impl Component for Signup {
         true
     }
 
-    fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        self.props = props;
-        true
+    fn change(&mut self, _props: Self::Properties) -> ShouldRender {
+        false
     }
 
     fn view(&self) -> Html {

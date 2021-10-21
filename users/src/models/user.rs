@@ -1,6 +1,7 @@
-use crate::models::League;
+use crate::graphql::League;
+
 use async_graphql::*;
-use futures::stream::StreamExt;
+use futures::stream::TryStreamExt;
 use serde::{Deserialize, Serialize};
 use wither::prelude::*;
 use wither::{
@@ -38,12 +39,8 @@ impl User {
 
     // query
     pub async fn find_all(db: &Database) -> Result<Vec::<Self>> {
-        let mut users: Vec<User> = Vec::new();
-        let mut cursor = User::find(&db, None, None).await?;
-
-        while let Some(league) = cursor.next().await {
-            users.push(league.unwrap());
-        }
+        let cursor = User::find(&db, None, None).await?;
+        let users: Vec<User> = cursor.try_collect().await?;
 
         Ok(users)
     }
@@ -77,59 +74,3 @@ impl User {
     }
 }
 
-#[Object]
-impl User {
-    async fn id(&self) -> ID {
-        if let Some(id) = &self.id {
-            ID::from(id)
-        } else {
-            let crap = String::from("");
-            ID::from(crap)
-        }
-    }
-    async fn username(&self) -> &str {
-        &self.username
-    }
-    async fn email(&self) -> &str {
-        &self.email
-    }
-    async fn role(&self) -> &str {
-        &self.role
-    }
-    async fn selected_league(&self) -> Option<League> {
-        if let Some(selected_league) = &self.selected_league {
-            Some(League{
-                id: ID::from(selected_league),
-            })
-        } else {
-            None
-        }
-    }
-}
-
-#[derive(InputObject)]
-pub struct SignupInput {
-    pub username: String,
-    pub email: String,
-    pub password: String,
-}
-
-#[derive(InputObject)]
-pub struct LoginInput {
-    pub username_or_email: String,
-    pub password: String,
-}
-
-#[derive(SimpleObject)]
-pub struct LoginResponse {
-    pub id: ID,
-    pub username: String,
-    pub email: String,
-    pub role: String,
-    pub token: String,
-}
-
-#[derive(SimpleObject)]
-pub struct LogoutResponse {
-    pub status: String,
-}

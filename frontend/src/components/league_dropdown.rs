@@ -1,9 +1,11 @@
 use graphql_client::{GraphQLQuery, QueryBody};
 use yew::prelude::*;
+use yew_router::prelude::*;
 use yew::services::fetch::FetchTask;
 
 use crate::components::dropdown::{Dropdown, DropdownItem};
 use crate::error::Error;
+use crate::routes::AppRoute;
 use crate::services::GraphQL;
 use crate::types::*;
 
@@ -11,13 +13,16 @@ pub struct LeagueDropdown {
     gql: GraphQL,
     link: ComponentLink<Self>,
     task: Option<FetchTask>,
-    callback: Callback<Result<my_leagues::ResponseData, Error>>,
+    my_leagues_callback: Callback<Result<my_leagues::ResponseData, Error>>,
+    set_league_callback: Callback<Result<select_league::ResponseData, Error>>,
     selected_league: Option<League>,
     joined_leagues: Vec<League>,
 }
 
 pub enum Msg {
-    LeaguesResponse(Result<my_leagues::ResponseData, Error>)
+    LeaguesResponse(Result<my_leagues::ResponseData, Error>),
+    SetLeagueResponse(Result<select_league::ResponseData, Error>),
+    SetSelectedLeague(String),
 }
 
 impl Component for LeagueDropdown {
@@ -27,7 +32,8 @@ impl Component for LeagueDropdown {
     fn create(_props: Self::Properties, link: ComponentLink<Self>) -> Self {
         LeagueDropdown {
             gql: GraphQL::new(),
-            callback: link.callback(Msg::LeaguesResponse),
+            my_leagues_callback: link.callback(Msg::LeaguesResponse),
+            set_league_callback: link.callback(Msg::SetLeagueResponse),
             selected_league: None,
             joined_leagues: Vec::new(),
             task: None,
@@ -40,7 +46,7 @@ impl Component for LeagueDropdown {
             let body = MyLeagues::build_query(my_leagues::Variables);
             self.task = Some(
                 self.gql.post::<QueryBody<my_leagues::Variables>, my_leagues::ResponseData>(
-                    body, self.callback.clone()
+                    body, self.my_leagues_callback.clone()
                 )
             );
         }
@@ -53,8 +59,10 @@ impl Component for LeagueDropdown {
                     Some(League {
                         id: league.clone().id,
                         name: league.clone().name,
+                        team: None,
                     })
                 } else {
+                    error!("Msg::LeagueResponse: No league is selected?");
                     None
                 };
                 
@@ -62,17 +70,45 @@ impl Component for LeagueDropdown {
                     .map(|league| League {
                         id: league.id,
                         name: league.name,
+                        team: None,
                     })
                     .collect();
 
                 self.joined_leagues = joined_leagues;
+
+                true
             }
             Msg::LeaguesResponse(Err(err)) => {
                 error!("{:?}", err);
+
+                false
+            }
+            Msg::SetSelectedLeague(id) => {
+                info!("Selected League: {:?}", id);
+                let body = SelectLeague::build_query(select_league::Variables{id});
+                self.task = Some(
+                    self.gql.post::<QueryBody<select_league::Variables>, select_league::ResponseData>(
+                        body, self.set_league_callback.clone()
+                    )
+                );
+
+                false
+            }
+            Msg::SetLeagueResponse(Ok(resp)) => {
+                self.selected_league = Some(League {
+                    id: resp.select_league.id.clone(),
+                    name: resp.select_league.name.clone(),
+                    team: None,
+                });
+
+                true
+            }
+            Msg::SetLeagueResponse(Err(err)) => {
+                error!("{:?}", err);
+
+                false
             }
         }
-
-        true
     }
 
     fn change(&mut self, _props: Self::Properties) -> ShouldRender {
@@ -80,6 +116,7 @@ impl Component for LeagueDropdown {
     }
 
     fn view(&self) -> Html {
+        // Selected League
         let selected_league: Option<League> = if let Some(selected_league) = self.selected_league.clone() {
             Some(selected_league)
         } else if self.joined_leagues.len() > 0 {
@@ -88,6 +125,9 @@ impl Component for LeagueDropdown {
             None
         };
 
+        // Callbacks
+        let callback_league = self.link.callback(|id| Msg::SetSelectedLeague(id));
+
         html! {
             { 
                 if self.joined_leagues.len() > 0 {
@@ -95,13 +135,22 @@ impl Component for LeagueDropdown {
                         html! {         
                             <Dropdown
                                 class="md:px-6 px-6"
-                                main_content=html!{ { selected_league.name.clone() } }>
+                                main_content=html!{
+                                    <RouterAnchor<AppRoute> route=AppRoute::League(selected_league.id.clone())>
+                                    { selected_league.name.clone() }
+                                    </RouterAnchor<AppRoute>>
+                                }
+                            >
                                 { for self.joined_leagues.iter().map(|league| {
                                     html! {
                                         <DropdownItem 
                                             class="block p-4 text-lg font-normal font-bold hover:text-red-800"
-                                            >
+                                            data=league.id.clone()
+                                            onclick=&callback_league
+                                        >
+                                        <RouterAnchor<AppRoute> route=AppRoute::League(league.id.clone())>
                                             { league.name.clone() }
+                                        </RouterAnchor<AppRoute>>
                                         </DropdownItem>
                                     }
                                 })}

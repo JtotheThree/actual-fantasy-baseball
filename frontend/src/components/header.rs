@@ -1,7 +1,9 @@
-use yew::{html, Component, ComponentLink, Html, Properties, ShouldRender, Callback, Bridge, agent::Bridged};
+use yew::{html, Component, ComponentLink, Html, ShouldRender, Callback, Bridge, agent::Bridged};
 use yew_router::{agent::RouteRequest::ChangeRoute, prelude::*};
 use yew::services::fetch::FetchTask;
+use yewtil::store::{Bridgeable, ReadOnly, StoreWrapper};
 
+use crate::agents::{State, state::Request};
 use crate::components::league_dropdown::LeagueDropdown;
 use crate::error::Error;
 use crate::services::{set_token, Auth};
@@ -10,36 +12,35 @@ use crate::types::*;
 
 pub struct Header {
     auth: Auth,
-    props: Props,
+    user: Option<User>,
     logout_response: Callback<Result<logout::ResponseData, Error>>,
+    state: Box<dyn Bridge<StoreWrapper<State>>>,
     router_agent: Box<dyn Bridge<RouteAgent>>,
     task: Option<FetchTask>,
     link: ComponentLink<Self>,
 }
 
-#[derive(Properties, Clone)]
-pub struct Props {
-    pub callback: Callback<()>,
-    pub current_user: Option<User>,
-}
-
 pub enum Msg {
     Logout,
     LogoutResponse(Result<logout::ResponseData, Error>),
+    StateMsg(ReadOnly<State>),
     Ignore,
 }
 
 impl Component for Header {
     type Message = Msg;
-    type Properties = Props;
+    type Properties = ();
 
-    fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
+    fn create(_props: Self::Properties, link: ComponentLink<Self>) -> Self {
+        let callback = link.callback(Msg::StateMsg);
+
         Header {
             auth: Auth::new(),
+            user: None,
             task: None,
             logout_response: link.callback(Msg::LogoutResponse),
+            state: State::bridge(callback),
             router_agent: RouteAgent::bridge(link.callback(|_| Msg::Ignore)),
-            props,
             link,
         }
     }
@@ -51,25 +52,37 @@ impl Component for Header {
             }
             Msg::LogoutResponse(Ok(_)) => {
                 set_token(None);
-                // Notify app to clear current user info
-                self.props.callback.emit(());
+
+                // Notify state to clear current user info
+                self.state.send(Request::UpdateUser(None));
+
                 // Redirect to home page
                 self.router_agent.send(ChangeRoute(AppRoute::Home.into()));  
             }
             Msg::LogoutResponse(Err(err)) => {
                 error!("{:?}", err);
             }
-            Msg::Ignore => {}
+            Msg::StateMsg(state) => {
+                let state = state.borrow();
+
+                if state.user != self.user {
+                    self.user = state.user.clone();
+                } else {
+                    return false;
+                }
+            }
+            Msg::Ignore => {
+            }
         }
         true
     }
 
-    fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        self.props = props;
-        true
+    fn change(&mut self, _props: Self::Properties) -> ShouldRender {
+        false
     }
 
     fn view(&self) -> Html {
+        info!("Header: view()");
         html! {
             <header class="border-solid border-b-2 border-black shadow-md">
             <nav class="flex flex-wrap items-center justify-between w-full py-4 md:py-0 px-4 text-2xl bg-paper">
@@ -80,7 +93,7 @@ impl Component for Header {
                         </a>
                     </RouterAnchor<AppRoute>>
                     {
-                        if let Some(_) = &self.props.current_user {
+                        if let Some(_) = &self.user {
                             html!{ <LeagueDropdown /> }
                         } else {
                             html!{}
@@ -88,7 +101,7 @@ impl Component for Header {
                     }
                 </ul>
                 {
-                    if let Some(user) = &self.props.current_user {
+                    if let Some(user) = &self.user {
                         self.logged_in_view(&user)
                     } else {
                         self.logged_out_view()

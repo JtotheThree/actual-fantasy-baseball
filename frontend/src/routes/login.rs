@@ -1,10 +1,10 @@
+use yew::prelude::*;
 use yew::services::fetch::FetchTask;
-use yew::{
-    agent::Bridged, html, Bridge, Callback, Component, ComponentLink, FocusEvent, Html, InputData,
-    Properties, ShouldRender,
-};
-use yew_router::{agent::RouteRequest::ChangeRoute, prelude::*};
 
+use yew_router::{agent::RouteRequest::ChangeRoute, prelude::*};
+use yewtil::store::{Bridgeable, ReadOnly, StoreWrapper};
+
+use crate::agents::{State, state::Request};
 use crate::components::list_errors::ListErrors;
 use crate::error::Error;
 use crate::services::{set_token, Auth};
@@ -14,19 +14,14 @@ use crate::routes::AppRoute;
 
 pub struct Login {
     auth: Auth,
+    user: Option<User>,
     error: Option<crate::error::Error>,
     request: login::Variables,
     response: Callback<Result<login::ResponseData, Error>>,
     task: Option<FetchTask>,
-    props: Props,
+    state: Box<dyn Bridge<StoreWrapper<State>>>,
     router_agent: Box<dyn Bridge<RouteAgent>>,
     link: ComponentLink<Self>,
-}
-
-#[derive(PartialEq, Properties, Clone)]
-pub struct Props {
-    /// Callback when user is logged in successfully
-    pub callback: Callback<User>,
 }
 
 pub enum Msg {
@@ -35,22 +30,26 @@ pub enum Msg {
     Ignore,
     UpdateUsername(String),
     UpdatePassword(String),
+    StateMsg(ReadOnly<State>),
 }
 
 impl Component for Login {
     type Message = Msg;
-    type Properties = Props;
+    type Properties = ();
 
-    fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
+    fn create(_props: Self::Properties, link: ComponentLink<Self>) -> Self {
+        let callback = link.callback(Msg::StateMsg);
+
         Login {
             auth: Auth::new(),
+            user: None,
             error: None,
-            props,
             request: login::Variables {
                 username_or_email: "".to_string(),
                 password: "".to_string(),
             },
             response: link.callback(Msg::Response),
+            state: State::bridge(callback),
             router_agent: RouteAgent::bridge(link.callback(|_| Msg::Ignore)),
             task: None,
             link,
@@ -67,17 +66,16 @@ impl Component for Login {
                 self.response.clone()));
             }
             Msg::Response(Ok(response)) => {
-                //error!{format!{"{:?}", user_info}};
                 // Set global token after logged in
                 set_token(Some(response.login.token.clone()));
 
-                self.props.callback.emit(User{
+                self.state.send(Request::UpdateUser(Some(User {
                     id: response.login.id,
                     username: response.login.username,
                     email: response.login.email,
                     role: response.login.role,
                     selected_league: None,
-                });
+                })));
 
                 self.error = None;
                 self.task = None;
@@ -95,6 +93,15 @@ impl Component for Login {
             Msg::UpdatePassword(password) => {
                 self.request.password = password;
             }
+            Msg::StateMsg(state) => {
+                let state = state.borrow();
+
+                if state.user != self.user {
+                    self.user = state.user.clone();
+                } else {
+                    return false;
+                }
+            }
             Msg::Ignore => {
                 println!("Ignore me");
             }
@@ -103,8 +110,7 @@ impl Component for Login {
         true
     }
 
-    fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        self.props = props;
+    fn change(&mut self, _props: Self::Properties) -> ShouldRender {
         true
     }
 

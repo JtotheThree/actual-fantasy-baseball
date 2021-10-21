@@ -1,5 +1,5 @@
-
 pub mod home;
+pub mod league;
 pub mod login;
 pub mod rules;
 pub mod signup;
@@ -15,6 +15,8 @@ pub enum AppRoute {
     Signup,
     #[to = "/rules"]
     Rules,
+    #[to = "/league/{id}"]
+    League(String),
     #[to = "/"]
     Home,
 }

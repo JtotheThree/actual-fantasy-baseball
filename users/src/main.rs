@@ -5,10 +5,12 @@ mod auth;
 mod config;
 mod graphql;
 mod models;
+mod routes;
 
 use crate::config::CONFIG;
-use crate::graphql::{index, Mutation, Query};
+use crate::graphql::{AppSchema, Mutation, Query};
 use crate::models::User;
+use crate::routes::index;
 
 use actix_web::{middleware, web, App, HttpServer};
 use async_graphql::{
@@ -22,10 +24,6 @@ use wither::Model;
 // TODO: Make all auth look ups skip mongo and only use redis
 // TODO: Put all auth checks into an is_verified common library
 // TODO: Ensure session look ups are async???
-
-
-pub type UsersSchema = Schema<Query, Mutation, EmptySubscription>;
-
 
 async fn init_db() -> Database {
     let db = Client::with_uri_str(&CONFIG.database.url)
@@ -52,7 +50,7 @@ async fn init_redis() -> redis::Client {
     client
 }
 
-fn init_graphql(db: &Database, redis: &redis::Client) -> UsersSchema {
+fn init_graphql(db: &Database, redis: &redis::Client) -> AppSchema {
     let schema = Schema::build(Query, Mutation, EmptySubscription)
         .data(db.clone())
         .data(redis.clone())

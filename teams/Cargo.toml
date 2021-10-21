@@ -1,0 +1,42 @@
+[package]
+name = "teams"
+version = "0.1.0"
+authors = ["John Mullins <johnmullins@gmail.com>"]
+edition = "2018"
+
+[[bin]]
+name = "teams"
+
+[dependencies]
+
+common = { path = "../common" }
+
+# Actix
+actix-web = "3.3.2"
+
+# Database
+wither = "0.9.0"
+
+# Session / Token
+jsonwebtoken = "7.2.0"
+redis = { version = "0.21.2", features = ["tokio-comp"] }
+
+# GraphQL
+async-graphql = { version = "2.9.15", features = ["apollo_tracing", "apollo_persisted_queries", "log", "tracing", "url"] }
+async-graphql-actix-web = "2.9.15"
+
+# Serialization
+serde = "1.0.123"
+serde_json = "1.0.61"
+strum = "0.22.0"
+strum_macros = "0.22.0"
+
+# Environment
+config = "0.11.0"
+pretty_env_logger = "0.4.0"
+log = "0.4.14"
+
+# General
+send_wrapper = "0.5.0"
+lazy_static = "1.4.0"
+futures = "0.3.17"

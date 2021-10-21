@@ -7,6 +7,43 @@ use jsonwebtoken::TokenData;
 use wither::prelude::*;
 use wither::{bson::doc, mongodb::Database};
 
+pub type AppSchema = Schema<Query, Mutation, EmptySubscription>;
+
+
+#[Object]
+impl User {
+    async fn id(&self) -> ID {
+        if let Some(id) = &self.id {
+            ID::from(id)
+        } else {
+            ID::from("")
+        }
+    }
+    async fn username(&self) -> &str {
+        &self.username
+    }
+    async fn email(&self) -> &str {
+        &self.email
+    }
+    async fn role(&self) -> &str {
+        &self.role
+    }
+    async fn selected_league(&self) -> Option<League> {
+        if let Some(selected_league) = &self.selected_league {
+            Some(League{
+                id: ID::from(selected_league),
+            })
+        } else {
+            None
+        }
+    }
+}
+
+pub struct League {
+    pub id: ID,
+}
+
+
 pub struct Query;
 
 #[Object(extends)]
@@ -169,4 +206,32 @@ impl Mutation {
             Err("Not logged in".into())
         }
     }
+}
+
+
+#[derive(InputObject)]
+pub struct SignupInput {
+    pub username: String,
+    pub email: String,
+    pub password: String,
+}
+
+#[derive(InputObject)]
+pub struct LoginInput {
+    pub username_or_email: String,
+    pub password: String,
+}
+
+#[derive(SimpleObject)]
+pub struct LoginResponse {
+    pub id: ID,
+    pub username: String,
+    pub email: String,
+    pub role: String,
+    pub token: String,
+}
+
+#[derive(SimpleObject)]
+pub struct LogoutResponse {
+    pub status: String,
 }

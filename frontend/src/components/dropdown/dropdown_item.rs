@@ -9,7 +9,7 @@ pub struct DropdownItem {
 pub struct Props {
     #[prop_or(Callback::noop())]
     /// Click event for dropdown item
-    pub onclick_signal: Callback<MouseEvent>,
+    pub onclick: Callback<String>,
     /// General property to add keys
     #[prop_or_default]
     pub key: String,
@@ -19,11 +19,14 @@ pub struct Props {
     /// General property to add custom id
     #[prop_or_default]
     pub id: String,
+    /// General property to add returned data
+    #[prop_or_default]
+    pub data: String,
     pub children: Children,
 }
 
 pub enum Msg {
-    Clicked(MouseEvent),
+    Clicked,
 }
 
 impl Component for DropdownItem {
@@ -36,8 +39,8 @@ impl Component for DropdownItem {
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
-            Msg::Clicked(mouse_event) => {
-                self.props.onclick_signal.emit(mouse_event);
+            Msg::Clicked => {
+                self.props.onclick.emit(self.props.data.clone());
             }
         }
         true
@@ -55,7 +58,7 @@ impl Component for DropdownItem {
     fn view(&self) -> Html {
         html! {
             <li class="py-1">
-                <a class=self.props.class.clone() key=self.props.key.clone() onclick=self.link.callback(Msg::Clicked)>
+                <a class=self.props.class.clone() key=self.props.key.clone() onclick=self.link.callback(|_| Msg::Clicked)>
                     { self.props.children.clone() }
                 </a>
             </li>

@@ -30,6 +30,7 @@ const gateway = new ApolloGateway({
     serviceList: [
         { name: "users", url: get_service_url("users", 8000) },
         { name: "leagues", url: get_service_url("leagues", 8001) },
+	{ name: "teams", url: get_service_url("teams", 8002) },
         //{ name: "teams", url: get_service_url("teams", 8002) },
         //{ name: "satellites-service", url: get_service_url("satellites-service", 8002) },
         //{ name: "auth-service", url: get_service_url("auth-service", 8003) },
