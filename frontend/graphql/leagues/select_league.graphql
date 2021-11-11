@@ -3,6 +3,10 @@ mutation SelectLeague(
 ) {
     selectLeague(id: $id) {
         id
-	name
+		name
+		team {
+			id
+			name
+		}
     }
 }

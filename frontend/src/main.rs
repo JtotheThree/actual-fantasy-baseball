@@ -20,6 +20,9 @@ use crate::agents::{State, state::Request};
 use crate::components::{header::Header};
 use error::Error;
 use routes::{
+    create_league::CreateLeagueForm,
+    create_team::CreateTeamForm,
+    join_league::JoinLeague,
     home::Home,
     login::Login,
     signup::Signup,
@@ -84,23 +87,12 @@ impl Component for App {
             Msg::StateMsg(_) => {
                 return false;
             }
-            Msg::UserResponse(Ok(me)) => {
-                let mut selected_league: Option<League> = None;
-
-                if let Some(league) = me.me.selected_league {
-                    selected_league = Some(League {
-                        id: league.id,
-                        name: league.name,
-                        team: None,
-                    });
-                }
-
+            Msg::UserResponse(Ok(resp)) => {
                 self.state.send(Request::UpdateUser(Some(User {
-                    id: me.me.id,
-                    username: me.me.username,
-                    email: me.me.email,
-                    role: me.me.role,
-                    selected_league,                    
+                    id: resp.me.id,
+                    username: resp.me.username,
+                    email: resp.me.email,
+                    role: resp.me.role,               
                 })));
 
                 self.user_task = None;
@@ -132,7 +124,11 @@ impl Component for App {
                             AppRoute::Login => html!{<Login />},
                             AppRoute::Signup => html!{<Signup />},
                             AppRoute::Rules => html!{<Rules />},
+                            AppRoute::CreateLeagueForm => html!{<CreateLeagueForm />},
+                            AppRoute::CreateTeamForm(league_id) => html!{<CreateTeamForm league_id=league_id.clone() />},
+                            AppRoute::JoinLeague => html!{<JoinLeague />},
                             AppRoute::League(id) => html!{<routes::league::League league_id=id.clone() />},
+                            AppRoute::Team(id) => html!{<routes::team::Team team_id=id.clone() />},
                             AppRoute::Home => html!{<Home />},
                         }
                     } else {

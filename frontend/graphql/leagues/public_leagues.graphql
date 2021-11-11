@@ -1,0 +1,20 @@
+query PublicLeagues {
+    leagues(filter: {
+        public:true
+    }) {
+        id
+        name
+        description
+        maxPlayers
+        managersCount
+	    state
+        owner {
+            id
+            username
+        }
+        managers {
+            id
+            username
+        }
+    }
+}

@@ -2,8 +2,9 @@ use crate::models::*;
 use common::*;
 use async_graphql::*;
 use jsonwebtoken::TokenData;
+use serde::Serialize;
 use wither::prelude::*;
-use wither::{mongodb::Database};
+use wither::{mongodb::Database, bson};
 
 pub type AppSchema = Schema<Query, Mutation, EmptySubscription>;
 
@@ -21,15 +22,39 @@ impl League {
         &self.name
     }
 
+    async fn description(&self) -> &str {
+        &self.description
+    }
+
+    async fn public(&self) -> bool {
+        self.public
+    }
+
+    async fn max_players(&self) -> i64 {
+        self.max_players
+    }
+
+    async fn state(&self) -> LeagueState {
+        self.state
+    }
+
+    async fn manual_state(&self) -> bool {
+        self.manual_state
+    }
+
     async fn owner(&self) -> User {
         User{ id: ID::from(&self.owner) }
     }
 
-    async fn users(&self) -> Vec<User> {
-        self.users.iter().map(|id| User{
+    async fn managers(&self) -> Vec<User> {
+        self.managers.iter().map(|id| User{
             id: ID::from(id)
         })
         .collect()
+    }
+
+    async fn managers_count(&self) -> usize {
+        self.managers.len()
     }
 }
 
@@ -45,12 +70,22 @@ pub struct Query;
 
 #[Object(extends, cache_control(max_age = 60))]
 impl Query {
-    async fn leagues(&self, ctx: &Context<'_>) -> Vec<League> {
+    async fn leagues(&self, ctx: &Context<'_>, filter: Option<LeagueFilter>) -> Vec<League> {
         let db: &Database = ctx.data().expect("Cannot connect to database");
 
-        let leagues = League::find_all(db).await.expect("Cannot get leagues");
+        match filter {
+            Some(filter) => {
+                let filter = bson::to_document(&filter).unwrap();
+                let leagues = League::find_all(db, Some(filter)).await.expect("Cannot get leagues");
+                
+                leagues
+            },
+            None => {
+                let leagues = League::find_all(db, None).await.expect("Cannot get leagues");
 
-        leagues
+                leagues
+            }
+        }
     }
 
     async fn league(&self, ctx: &Context<'_>, id: ID) -> Result<League> {
@@ -138,25 +173,56 @@ impl Mutation {
         let maybe_current_user = get_current_user(&mut con, token_data);
 
         if let Some(current_user) = maybe_current_user {
-            let mut new_league = League::new_league(&input.name, &current_user.id);
+            let mut new_league = League::new_league(
+                &input.name,
+                &input.description,
+                input.public,
+                input.password,
+                input.max_players,
+                input.manual_state,
+                &current_user.id, 
+            );
 
-            if let Ok(_) = new_league.save(&db, None).await {
+            new_league.save(&db, None).await?;
+
+            Ok(new_league)
+
+            /*if let Ok(_) = new_league.save(&db, None).await {
                 Ok(new_league)
             } else {
                 Err(Error::new("Can't create league user"))
-            }
+            }*/
         } else {
             Err("Can't create league".into())
         }
     }
 
-    async fn add_user_to_league(
+    async fn join_league(&self, ctx: &Context<'_>, id: ID) -> Result<League, Error> {
+        let db: &Database = ctx.data()?;
+
+        let redis_client: &redis::Client = ctx.data()?;
+
+        let mut con = redis_client.get_connection()?;
+        let token_data = ctx.data_opt::<TokenData<Claims>>().unwrap();
+    
+        let maybe_current_user = get_current_user(&mut con, token_data);
+
+        if let Some(current_user) = maybe_current_user {
+            let league = League::add_manager(&db, id.to_string(), current_user.id.clone()).await?;
+
+            Ok(league)
+        } else {
+            Err("Unable to join league".into())
+        }
+    }
+
+    async fn add_manager_to_league(
         &self, ctx: &Context<'_>,
-        input: AddUserInput
+        input: AddManagerInput
     ) -> Result<League, Error> {
         let db: &Database = ctx.data()?;
 
-        if let Ok(league) = League::add_user(db, input.id, input.user_id).await {
+        if let Ok(league) = League::add_manager(db, input.id, input.user_id).await {
             Ok(league)
         } else {
             Err("Cannot insert user into league".into())
@@ -169,10 +235,24 @@ impl Mutation {
 #[derive(Clone, InputObject)]
 pub struct CreateLeagueInput {
     pub name: String,
+    pub description: String,
+    pub public: bool,
+    pub password: Option<String>,
+    pub max_players: i64,
+    pub manual_state: bool,
 }
 
 #[derive(Clone, InputObject)]
-pub struct AddUserInput {
+pub struct AddManagerInput {
     pub id: String,
     pub user_id: String, 
+}
+
+// TODO: If needed? https://github.com/serde-rs/serde/issues/984
+#[derive(Clone, Serialize, InputObject)]
+pub struct LeagueFilter {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub public: Option<bool>,
 }

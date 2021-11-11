@@ -73,17 +73,10 @@ impl Component for Signup {
                     self.task = Some(self.auth.signup(variables, self.response.clone()));
                 }
             }
-            Msg::Response(Ok(response)) => {
-                //error!{format!{"{:?}", user_info}};
-                // Set global token after logged in
-                if response.signup.id == "success" {
-                    self.error = None;
-                    self.task = None;
-                    self.router_agent.send(ChangeRoute(AppRoute::Login.into()));
-                } else {
-                    self.task = None;
-                    self.error = Some(Error::InternalServerError);
-                }
+            Msg::Response(Ok(_)) => {
+                self.error = None;
+                self.task = None;
+                self.router_agent.send(ChangeRoute(AppRoute::Login.into()));
             }
             Msg::Response(Err(err)) => {
                 //error!{"{:?}", err};

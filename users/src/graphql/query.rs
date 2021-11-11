@@ -43,6 +43,10 @@ pub struct League {
     pub id: ID,
 }
 
+pub struct Team {
+    pub id: ID,
+}
+
 
 pub struct Query;
 
@@ -104,6 +108,11 @@ impl Query {
     async fn find_league_by_id(&self, id: ID) -> League {
         League { id }
     }
+
+    #[graphql(entity)]
+    async fn find_team_by_id(&self, id: ID) -> Team {
+        Team { id }
+    }
 }
 
 #[Object(extends)]
@@ -123,6 +132,14 @@ impl League {
         } else {
             Err("Can't get user".into())
         }
+    }
+}
+
+#[Object(extends)]
+impl Team {
+    #[graphql(external)]
+    async fn id(&self) -> &ID {
+        &self.id
     }
 }
 

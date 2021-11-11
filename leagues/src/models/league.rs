@@ -1,8 +1,22 @@
 use async_graphql::*;
-use futures::stream::{StreamExt, TryStreamExt};
+use futures::stream::TryStreamExt;
+use std::collections::HashMap;
+use strum_macros::EnumString;
 use serde::{Deserialize, Serialize};
 use wither::prelude::*;
-use wither::{bson::{doc, oid::ObjectId}, mongodb::Database};
+use wither::{bson::{doc, oid::ObjectId, Document}, bson, mongodb::Database};
+
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Enum, EnumString, Serialize, Deserialize)]
+#[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
+pub enum LeagueState {
+    Manual,
+    Created,
+    Drafting,
+    SeasonStart,
+    Playoffs,
+    RealmSeries,
+    SeasonEnd,
+}
 
 /// League representation
 #[derive(Clone, Debug, Model, Serialize, Deserialize)]
@@ -16,29 +30,76 @@ pub struct League {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,
     pub name: String,
+    pub description: String,
+
+    pub public: bool,
+    pub password: Option<String>,
+    pub max_players: i64,
+
+    pub state: LeagueState,
+    pub manual_state: bool,
 
     /// Owner: User!
     pub owner: ObjectId,
     // Users: [User!]!
-    pub users: Vec<ObjectId>,
+    pub managers: Vec<ObjectId>,
+
+    // Season
+    pub draft_start: Option<bson::DateTime>,
+    pub season_start: Option<bson::DateTime>,
+    pub season_end: Option<bson::DateTime>,
+    pub games_per_season: Option<i64>,
+    pub playoff_rounds: Option<i64>,
+    pub realm_series_games: Option<i64>,
 }
 
 impl League {
-    pub fn new_league(name: &str, owner_id: &str) -> Self {
+    pub fn new_league(
+        name: &str,
+        description: &str,
+        public: bool,
+        password: Option<String>,
+        max_players: i64,
+        manual_state: bool,
+        owner_id: &str,
+    ) -> Self {
         let oid = ObjectId::with_string(&owner_id).expect("Can't get id from String");
 
-        let users: Vec<ObjectId> = vec![oid.clone()];
+        let managers: Vec<ObjectId> = vec![oid.clone()];
+
+        let mut state = LeagueState::Created;
+
+        if manual_state {
+            state = LeagueState::Manual;
+        }
 
         League {
             id: None,
             name: String::from(name),
+            description: String::from(description),
             owner: oid,
-            users: users,
+            draft_start: None,
+            season_start: None,
+            season_end: None,
+            games_per_season: None,
+            playoff_rounds: None,
+            realm_series_games: None,
+            state,
+            manual_state,
+            password,
+            public,
+            managers,
+            max_players,
         }
     }
 
-    pub async fn find_all(db: &Database) -> Result<Vec::<Self>> {
-        let cursor = League::find(&db, None, None).await?;
+    pub async fn find_all(db: &Database, filter: Option<Document>) -> Result<Vec::<Self>> {
+        info!("{:?}", filter);
+
+        let doc = doc!{ "public": true };
+        info!("{:?}", doc);
+
+        let cursor = League::find(&db, filter, None).await?;
         let leagues: Vec<League> = cursor.try_collect().await?;
 
         Ok(leagues)
@@ -57,7 +118,7 @@ impl League {
 
     pub async fn find_by_user_id(db: &Database, user_id: &ID) -> Result<Vec::<Self>> {
         let oid = ObjectId::with_string(&user_id).expect("Can't get id from String");
-        let cursor = League::find(&db, doc! {"users": oid }, None).await?;
+        let cursor = League::find(&db, doc! {"managers": oid }, None).await?;
 
         let leagues: Vec<League> = cursor.try_collect().await?;
 
@@ -74,13 +135,13 @@ impl League {
     }
 
     // mutation
-    pub async fn add_user(db: &Database, id: String, user_id: String) -> Result<Self> {
+    pub async fn add_manager(db: &Database, id: String, user_id: String) -> Result<Self> {
         let query = doc! {
             "_id": ObjectId::with_string(&id)?
         };
 
         if let Some(mut league) = League::find_one(db, Some(query), None).await? {
-            league.users.push(ObjectId::with_string(&user_id)?);
+            league.managers.push(ObjectId::with_string(&user_id)?);
 
             league.save(db, None).await?;
 

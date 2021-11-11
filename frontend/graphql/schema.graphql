@@ -12,13 +12,18 @@ directive @provides(fields: String!) on FIELD_DEFINITION
 
 directive @requires(fields: String!) on FIELD_DEFINITION
 
-input AddUserInput {
+input AddManagerInput {
   id: String!
   userId: String!
 }
 
 input CreateLeagueInput {
   name: String!
+  description: String!
+  public: Boolean!
+  password: String
+  maxPlayers: Int!
+  manualState: Boolean!
 }
 
 input CreateTeamInput {
@@ -29,9 +34,31 @@ input CreateTeamInput {
 type League {
   id: ID!
   name: String!
+  description: String!
+  public: Boolean!
+  maxPlayers: Int!
+  state: LeagueState!
+  manualState: Boolean!
   owner: User!
-  users: [User!]!
+  managers: [User!]!
+  managersCount: Int!
   user: User!
+  team: Team
+}
+
+input LeagueFilter {
+  name: String
+  public: Boolean
+}
+
+enum LeagueState {
+  MANUAL
+  CREATED
+  DRAFTING
+  SEASON_START
+  PLAYOFFS
+  REALM_SERIES
+  SEASON_END
 }
 
 input LoginInput {
@@ -57,7 +84,8 @@ type Mutation {
   logout: LogoutResponse!
   selectLeague(id: ID!): League!
   createLeague(input: CreateLeagueInput!): League!
-  addUserToLeague(input: AddUserInput!): League!
+  joinLeague(id: ID!): League!
+  addManagerToLeague(input: AddManagerInput!): League!
   createTeam(input: CreateTeamInput!): Team!
 }
 
@@ -66,7 +94,7 @@ type Query {
   me: User!
   users: [User!]!
   user(id: ID!): User!
-  leagues: [League!]!
+  leagues(filter: LeagueFilter): [League!]!
   league(id: ID!): League!
   teams: [Team!]!
   team(id: ID!): Team!

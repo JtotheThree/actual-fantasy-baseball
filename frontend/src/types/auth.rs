@@ -1,8 +1,6 @@
 use graphql_client::GraphQLQuery;
 use serde::{Deserialize, Serialize};
 
-use crate::types::League;
-
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "./graphql/schema.graphql",
@@ -42,5 +40,4 @@ pub struct User {
     pub username: String,
     pub email: String,
     pub role: String,
-    pub selected_league: Option<League>,
 }

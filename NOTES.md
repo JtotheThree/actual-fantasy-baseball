@@ -1,7 +1,8 @@
 What LEAGUES have been created by USER      LEAGUES->USER (Done)
-What LEAGUES is a USER a member of          LEAGUES->USER
-Which USERS are in a LEAGUE                 USERS->LEAGUE
+What LEAGUES is a USER a member of          LEAGUES->USER (Done)
+Which USERS are in a LEAGUE                 USERS->LEAGUE 
 Which TEAMS are in a LEAGUE                 TEAMS->LEAGUE
+Which TEAM is in the selected LEAGUE        TEAM->LEAGUE
 Which PLAYERS are in a TEAM                 PLAYERS->TEAM
 Which PLAYERS are in a LEAGUE               PLAYERS->LEAGUE
 

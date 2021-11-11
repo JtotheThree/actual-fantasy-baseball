@@ -28,7 +28,19 @@ impl Team {
     }
 
     async fn league(&self) -> League {
-        League{ id: ID::from(&self.owner) }
+        League{ id: ID::from(&self.league) }
+    }
+
+    async fn gold(&self) -> i64 {
+        self.gold
+    }
+
+    async fn roster(&self) -> &Roster {
+        &self.roster
+    }
+
+    async fn lineup(&self) -> &Vec<Option<LineupSlot>> {
+        &self.lineup
     }
 }
 
@@ -53,10 +65,10 @@ impl User {
     async fn teams(&self, ctx: &Context<'_>) -> Result<Vec<Team>> {
         let db: &Database = ctx.data().expect("Cannot connect to database");
 
-        let maybe_team = Team::find_by_owner_id(db, &self.id).await;
+        let maybe_teams = Team::find_by_owner_id(db, &self.id).await;
 
-        if let Ok(team) = maybe_team {
-            Ok(team)
+        if let Ok(teams) = maybe_teams {
+            Ok(teams)
         } else {
             Err("Can't get leagues for owner".into())
         }        
@@ -68,6 +80,22 @@ impl League {
     #[graphql(external)]
     async fn id(&self) -> &ID {
         &self.id
+    }
+
+    async fn team(&self, ctx: &Context<'_>) -> Option<Team> {
+        let db: &Database = ctx.data().expect("Cannot connect to database");
+        let redis_client: &redis::Client = ctx.data().expect("Cannot connect to cache");
+
+        let mut con = redis_client.get_connection().expect("Cannot connect to cache");
+        let token_data = ctx.data_opt::<TokenData<Claims>>().unwrap();
+    
+        let maybe_current_user = get_current_user(&mut con, token_data);
+
+        if let Some(current_user) = maybe_current_user {
+            Team::find_user_team_for_league(db, &current_user.id, &self.id).await
+        } else {
+            None
+        }        
     }
 }
 
@@ -129,7 +157,7 @@ impl Mutation {
         let maybe_current_user = get_current_user(&mut con, token_data);
 
         if let Some(current_user) = maybe_current_user {
-            let mut new_team = Team::new_team(&input.name, &current_user.id, &input.league_id);
+            let mut new_team = Team::new_team(&input.name, &input.league_id, &current_user.id);
 
             if let Ok(_) = new_team.save(&db, None).await {
                 Ok(new_team)

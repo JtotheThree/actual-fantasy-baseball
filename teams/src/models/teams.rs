@@ -1,5 +1,5 @@
 use async_graphql::*;
-use futures::stream::{StreamExt, TryStreamExt};
+use futures::stream::TryStreamExt;
 use serde::{Deserialize, Serialize};
 use wither::prelude::*;
 use wither::{bson::{doc, oid::ObjectId}, mongodb::Database};
@@ -19,6 +19,51 @@ pub struct Team {
 
     pub league: ObjectId,
     pub owner: ObjectId,
+
+    pub gold: i64,
+    pub roster: Roster,
+    pub lineup: Vec<Option<LineupSlot>>,
+    pub starting_pitcher: Option<StartingPitcher>,
+    pub reserves: Vec<Option<ID>>,
+    pub pitchers: Vec<Option<ID>>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, SimpleObject)]
+#[serde(rename_all = "camelCase")]
+pub struct Roster {
+    pub starting_pitchers: Vec<Option<ID>>,
+    pub relief_pitchers: Vec<Option<ID>>,
+    pub catchers: Vec<Option<ID>>,
+    pub infielders: Vec<Option<ID>>,
+    pub outfielders: Vec<Option<ID>>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, SimpleObject)]
+#[serde(rename_all = "camelCase")]
+pub struct LineupSlot {
+    pub player_id: ID,
+    pub position: String,
+    pub sub_id: ID,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, SimpleObject)]
+#[serde(rename_all = "camelCase")]
+pub struct StartingPitcher {
+    pub player_id: ID,
+    pub sub1_id: ID,
+    pub sub2_id: Option<ID>,
+}
+
+impl Roster {
+    pub fn new() -> Self {
+        Roster {
+            starting_pitchers: vec![None; 5],
+            relief_pitchers: vec![None; 7],
+            catchers: vec![None; 2],
+            infielders: vec![None; 6],
+            outfielders: vec![None; 5],
+        }
+    }
 }
 
 impl Team {
@@ -32,6 +77,12 @@ impl Team {
             name: String::from(name),
             league: league_id,
             owner: owner_id,
+            gold: 500000,
+            lineup: vec![None; 9],
+            starting_pitcher: None,
+            reserves: vec![None; 6],
+            pitchers: vec![None; 6],
+            roster: Roster::new(),
         }
     }
 
@@ -55,7 +106,7 @@ impl Team {
 
     pub async fn find_by_owner_id(db: &Database, owner_id: &str) -> Result<Vec::<Self>> {
         let owner_id = ObjectId::with_string(&owner_id).expect("Can't get id from String");
-        let cursor = Team::find(&db, doc! {"ownerId": owner_id }, None).await?;
+        let cursor = Team::find(&db, doc! {"owner": owner_id }, None).await?;
 
         let teams: Vec<Team> = cursor.try_collect().await?; 
 
@@ -79,6 +130,6 @@ impl Team {
         let league_id = ObjectId::with_string(&league_id).expect("Can't get id from String");
         let owner_id = ObjectId::with_string(&owner_id).expect("Can't get id from String");
 
-        Team::find_one(&db, doc! { "leagueId": league_id, "ownerId": owner_id }, None).await.unwrap()
+        Team::find_one(&db, doc! { "league": league_id, "owner": owner_id }, None).await.unwrap()
     }    
 }

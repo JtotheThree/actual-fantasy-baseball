@@ -75,8 +75,6 @@ impl GraphQL {
                 if meta.status.is_success() {
                     let resp: Result<ResponseWrapper<T>, _> = serde_json::from_str(&data);
 
-                    debug!("RESPONSO: {:?}", resp);
-
                     if let Ok(resp) = resp {
                         if let Some(data) = resp.data {
                             callback.emit(Ok(data))

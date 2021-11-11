@@ -1,0 +1,18 @@
+query MyTeams {
+  me {
+    selectedLeague{
+      id
+      team{
+        id
+        name
+      }
+    }
+    joinedLeagues{
+      id
+      team{
+        id
+        name
+      }
+    }
+  }
+}

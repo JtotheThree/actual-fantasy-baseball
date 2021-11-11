@@ -1,11 +1,15 @@
 mod auth;
 mod leagues;
+mod teams;
+mod manager;
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 pub use auth::*;
 pub use leagues::*;
+pub use teams::*;
+pub use manager::*;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]

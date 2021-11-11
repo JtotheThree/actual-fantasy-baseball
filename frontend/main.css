@@ -4,6 +4,10 @@
 
 @layer components {
     .input {
-        @apply p-2 border-b-2 border-black outline-none bg-paper focus:ring focus:ring-red-700;
+        @apply p-2 border-0 border-b-2 border-black outline-none bg-paper focus:ring focus:ring-red-700;
+    }
+
+    .checkbox {
+        @apply p-2 border-b-2
     }
 }

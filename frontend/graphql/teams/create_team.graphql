@@ -1,0 +1,12 @@
+mutation CreateTeam(
+  $name: String!
+  $leagueId: ID!
+) {
+  createTeam(input:{
+    name: $name
+    leagueId: $leagueId
+  }) {
+    id
+    name
+  }
+}

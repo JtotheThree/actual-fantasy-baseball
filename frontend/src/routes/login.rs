@@ -74,7 +74,6 @@ impl Component for Login {
                     username: response.login.username,
                     email: response.login.email,
                     role: response.login.role,
-                    selected_league: None,
                 })));
 
                 self.error = None;

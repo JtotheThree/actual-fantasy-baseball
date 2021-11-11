@@ -3,6 +3,10 @@ query MyLeagues {
     selectedLeague {
       id
       name
+      team {
+      	id
+	name
+      }
     }
     joinedLeagues {
       id

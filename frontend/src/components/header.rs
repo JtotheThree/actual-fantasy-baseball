@@ -4,7 +4,7 @@ use yew::services::fetch::FetchTask;
 use yewtil::store::{Bridgeable, ReadOnly, StoreWrapper};
 
 use crate::agents::{State, state::Request};
-use crate::components::league_dropdown::LeagueDropdown;
+use crate::components::{league_dropdown::LeagueDropdown, team_dropdown::TeamDropdown};
 use crate::error::Error;
 use crate::services::{set_token, Auth};
 use crate::routes::AppRoute;
@@ -94,7 +94,12 @@ impl Component for Header {
                     </RouterAnchor<AppRoute>>
                     {
                         if let Some(_) = &self.user {
-                            html!{ <LeagueDropdown /> }
+                            html!{
+                                <>
+                                <LeagueDropdown />
+                                <TeamDropdown />
+                                </>
+                            }
                         } else {
                             html!{}
                         }
