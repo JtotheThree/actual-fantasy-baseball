@@ -1,0 +1,20 @@
+mutation CreateLeague (
+    $name: String!
+    $description: String!
+    $public: Boolean!
+    $password: String
+    $maxPlayers: Int!
+    $manualState: Boolean!
+) {
+    createLeague(input: {
+        name: $name
+	    description: $description
+        public: $public
+        maxPlayers: $maxPlayers
+        password: $password
+	    manualState: $manualState
+    }) {
+        id
+        name
+    }
+}

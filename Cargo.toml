@@ -2,6 +2,7 @@
 members = [
     "common",
     "frontend",
+    "frontend_test",
     "leagues",
     "teams",
     "users",

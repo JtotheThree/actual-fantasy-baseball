@@ -1,0 +1,7 @@
+mutation JoinLeague(
+    $id: ID!
+) {
+    joinLeague(id:$id) {
+        id
+    }
+}
