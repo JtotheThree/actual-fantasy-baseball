@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom"
 import { Card, CardHeader, CardSubHeader, CardBody } from "../components/Card";
 import { GET_LEAGUE } from "../graphql/league";
 
-export default function League() {
+function LeagueInfo() {
   let { id } = useParams();
   let { loading, error, data } = useQuery(GET_LEAGUE, {
     variables: {id: id}
@@ -43,15 +43,28 @@ export default function League() {
   );
 
   return (
-    <div className="flex flex-col md:w-1/3 mx-auto p-8 space-y-8">
-      <Card>
-        <CardHeader title={data.league.name + " Info"} />
-        <CardSubHeader content={data.league.description} />
-        <CardBody>
-          {content}
-        </CardBody>
-      </Card>
+    <Card>
+      <CardHeader title={data.league.name + " Info"} />
+      <CardSubHeader content={data.league.description} />
+      <CardBody>
+        {content}
+      </CardBody>
+    </Card>
+  )
+}
 
+function TeamInfo() {
+  let { id } = useParams();
+
+
+}
+
+export default function League() {
+
+
+  return (
+    <div className="flex flex-col md:w-1/1 mx-auto p-8 space-y-8">
+      <LeagueInfo />
     </div>
   )
 }
