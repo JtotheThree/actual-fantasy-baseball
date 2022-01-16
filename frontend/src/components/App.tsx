@@ -9,6 +9,7 @@ import Login from '../routes/Login';
 import Signup from '../routes/Signup';
 import League from '../routes/League';
 import CreateLeague from '../routes/CreateLeague';
+import JoinLeague from '../routes/JoinLeague';
 
 export const tokenState = atom({
   key: 'tokenState',
@@ -28,6 +29,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/createLeague" element={<CreateLeague />} />
+          <Route path="/joinLeague" element={<JoinLeague />} />
           <Route path="/league/:id" element={<League />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />

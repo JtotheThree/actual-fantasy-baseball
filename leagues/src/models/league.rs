@@ -39,9 +39,9 @@ pub struct League {
     pub manual_state: bool,
 
     /// Owner: User!
-    pub owner: ObjectId,
+    pub owner: String,
     // Users: [User!]!
-    pub managers: Vec<ObjectId>,
+    pub managers: Vec<String>,
 
     // Season
     pub draft_start: Option<bson::DateTime>,
@@ -62,9 +62,9 @@ impl League {
         manual_state: bool,
         owner_id: &str,
     ) -> Self {
-        let oid = ObjectId::with_string(&owner_id).expect("Can't get id from String");
+        //let oid = ObjectId::with_string(&owner_id).expect("Can't get id from String");
 
-        let managers: Vec<ObjectId> = vec![oid.clone()];
+        let managers: Vec<String> = vec![owner_id.to_string()];
 
         let mut state = LeagueState::Created;
 
@@ -76,7 +76,7 @@ impl League {
             id: None,
             name: String::from(name),
             description: String::from(description),
-            owner: oid,
+            owner: owner_id.to_string(),
             draft_start: None,
             season_start: None,
             season_end: None,
@@ -93,11 +93,6 @@ impl League {
     }
 
     pub async fn find_all(db: &Database, filter: Option<Document>) -> Result<Vec::<Self>> {
-        info!("{:?}", filter);
-
-        let doc = doc!{ "public": true };
-        info!("{:?}", doc);
-
         let cursor = League::find(&db, filter, None).await?;
         let leagues: Vec<League> = cursor.try_collect().await?;
 
@@ -115,20 +110,20 @@ impl League {
             .unwrap()
     } */
 
-    pub async fn find_by_user_id(db: &Database, user_id: &ID) -> Result<Vec::<Self>> {
-        let oid = ObjectId::with_string(&user_id).expect("Can't get id from String");
-        let cursor = League::find(&db, doc! {"managers": oid }, None).await?;
+    pub async fn find_by_user_id(db: &Database, user_id: &str) -> Result<Vec::<Self>> {
+        //let oid = ObjectId::with_string(&user_id).expect("Can't get id from String");
+        let cursor = League::find(&db, doc! {"managers": user_id }, None).await?;
 
         let leagues: Vec<League> = cursor.try_collect().await?;
 
         Ok(leagues)
     }
 
-    pub async fn find_by_owner_id(db: &Database, owner_id: &ID) -> Result<Vec::<Self>> {
-        let oid = ObjectId::with_string(&owner_id).expect("Can't get id from String");
-        let cursor = League::find(&db, doc! {"ownerId": oid }, None).await?;
+    pub async fn find_by_owner_id(db: &Database, owner_id: &str) -> Result<Vec::<Self>> {
+        //let oid = ObjectId::with_string(&owner_id).expect("Can't get id from String");
+        let cursor = League::find(&db, doc! {"ownerId": owner_id }, None).await?;
 
-        let leagues: Vec<League> = cursor.try_collect().await?; 
+        let leagues: Vec<League> = cursor.try_collect().await?;
 
         Ok(leagues)
     }
@@ -140,7 +135,7 @@ impl League {
         };
 
         if let Some(mut league) = League::find_one(db, Some(query), None).await? {
-            league.managers.push(ObjectId::with_string(&user_id)?);
+            league.managers.push(user_id);
 
             league.save(db, None).await?;
 
@@ -149,5 +144,5 @@ impl League {
             Err(format!("League with id: {:?} not found", &id).into())
         }
     }
-    
+
 }

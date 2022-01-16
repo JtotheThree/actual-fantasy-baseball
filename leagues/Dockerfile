@@ -1,5 +1,5 @@
 # Install cargo-chef
-FROM docker.io/library/rust:1.55 AS chef
+FROM docker.io/library/rust:1.58 AS chef
 RUN cargo install cargo-chef
 RUN mkdir /usr/src/build/
 COPY common /usr/src/common
@@ -24,7 +24,7 @@ RUN cargo build --release
 
 # Runtime
 FROM docker.io/library/debian:buster-slim AS runtime
-WORKDIR app
+WORKDIR /app
 COPY --from=build /usr/src/build/target/release/leagues /usr/local/bin/
 EXPOSE 8001
 ENTRYPOINT ["/usr/local/bin/leagues"]

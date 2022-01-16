@@ -25,3 +25,13 @@ query GetLeague (
   }
 }
 `;
+
+export const JOIN_LEAGUE = gql`
+mutation JoinLeague(
+  $id: ID!
+) {
+  joinLeague(id:$id) {
+      id
+  }
+}
+`;

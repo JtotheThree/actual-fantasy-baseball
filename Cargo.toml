@@ -1,8 +1,6 @@
 [workspace]
 members = [
     "common",
-    "frontend_yew",
-    "frontend_dioxus",
     "leagues",
     "teams",
     "users",

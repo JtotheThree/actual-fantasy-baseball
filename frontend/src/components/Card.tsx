@@ -4,7 +4,7 @@ type CardFooterProps = {
   children: ReactNode
 }
 
-export function CardFooterProps(props: CardFooterProps) {
+export function CardFooter(props: CardFooterProps) {
   return (
     <div className="mx-4 mt-2 mb-4">
       {props.children}

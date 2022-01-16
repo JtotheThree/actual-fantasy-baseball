@@ -2,9 +2,12 @@ use crate::models::*;
 use common::*;
 use async_graphql::*;
 use jsonwebtoken::TokenData;
-use serde::Serialize;
 use wither::prelude::*;
-use wither::{mongodb::Database, bson};
+use wither::{mongodb::Database};
+
+use std::collections::HashMap;
+
+use common::filter::process_filter;
 
 pub type AppSchema = Schema<Query, Mutation, EmptySubscription>;
 
@@ -70,20 +73,20 @@ pub struct Query;
 
 #[Object(extends, cache_control(max_age = 60))]
 impl Query {
-    async fn leagues(&self, ctx: &Context<'_>, filter: Option<LeagueFilter>) -> Vec<League> {
+    async fn leagues(&self, ctx: &Context<'_>, filter: Option<HashMap<String, serde_json::Value>>) -> Result<Vec<League>> {
         let db: &Database = ctx.data().expect("Cannot connect to database");
 
         match filter {
             Some(filter) => {
-                let filter = bson::to_document(&filter).unwrap();
-                let leagues = League::find_all(db, Some(filter)).await.expect("Cannot get leagues");
-                
-                leagues
+                let filter = process_filter(filter)?;
+                let leagues = League::find_all(db, Some(filter)).await?;
+
+                Ok(leagues)
             },
             None => {
                 let leagues = League::find_all(db, None).await.expect("Cannot get leagues");
 
-                leagues
+                Ok(leagues)
             }
         }
     }
@@ -169,7 +172,7 @@ impl Mutation {
 
         let mut con = redis_client.get_connection()?;
         let token_data = ctx.data_opt::<TokenData<Claims>>().unwrap();
-    
+
         let maybe_current_user = get_current_user(&mut con, token_data);
 
         if let Some(current_user) = maybe_current_user {
@@ -180,7 +183,7 @@ impl Mutation {
                 input.password,
                 input.max_players,
                 input.manual_state,
-                &current_user.id, 
+                &current_user.id,
             );
 
             new_league.save(&db, None).await?;
@@ -204,7 +207,7 @@ impl Mutation {
 
         let mut con = redis_client.get_connection()?;
         let token_data = ctx.data_opt::<TokenData<Claims>>().unwrap();
-    
+
         let maybe_current_user = get_current_user(&mut con, token_data);
 
         if let Some(current_user) = maybe_current_user {
@@ -218,11 +221,12 @@ impl Mutation {
 
     async fn add_manager_to_league(
         &self, ctx: &Context<'_>,
-        input: AddManagerInput
+        league_id: String,
+        user_id: String,
     ) -> Result<League, Error> {
         let db: &Database = ctx.data()?;
 
-        if let Ok(league) = League::add_manager(db, input.id, input.user_id).await {
+        if let Ok(league) = League::add_manager(db, league_id, user_id).await {
             Ok(league)
         } else {
             Err("Cannot insert user into league".into())
@@ -240,19 +244,4 @@ pub struct CreateLeagueInput {
     pub password: Option<String>,
     pub max_players: i64,
     pub manual_state: bool,
-}
-
-#[derive(Clone, InputObject)]
-pub struct AddManagerInput {
-    pub id: String,
-    pub user_id: String, 
-}
-
-// TODO: If needed? https://github.com/serde-rs/serde/issues/984
-#[derive(Clone, Serialize, InputObject)]
-pub struct LeagueFilter {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub public: Option<bool>,
 }

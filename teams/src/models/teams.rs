@@ -1,6 +1,7 @@
 use async_graphql::*;
 use futures::stream::TryStreamExt;
 use serde::{Deserialize, Serialize};
+use wither::bson::Document;
 use wither::prelude::*;
 use wither::{bson::{doc, oid::ObjectId}, mongodb::Database};
 
@@ -86,8 +87,8 @@ impl Team {
         }
     }
 
-    pub async fn find_all(db: &Database) -> Result<Vec::<Self>> {
-        let cursor = Team::find(&db, None, None).await?;
+    pub async fn find_all(db: &Database, filter: Option<Document>) -> Result<Vec::<Self>> {
+        let cursor = Team::find(&db, filter, None).await?;
         let teams: Vec<Team> = cursor.try_collect().await?;
 
         Ok(teams)
@@ -108,7 +109,7 @@ impl Team {
         let owner_id = ObjectId::with_string(&owner_id).expect("Can't get id from String");
         let cursor = Team::find(&db, doc! {"owner": owner_id }, None).await?;
 
-        let teams: Vec<Team> = cursor.try_collect().await?; 
+        let teams: Vec<Team> = cursor.try_collect().await?;
 
         Ok(teams)
     }
@@ -117,19 +118,19 @@ impl Team {
         let league_id = ObjectId::with_string(&league_id).expect("Can't get id from String");
         let cursor = Team::find(&db, doc! {"leagueId": league_id }, None).await?;
 
-        let teams: Vec<Team> = cursor.try_collect().await?; 
+        let teams: Vec<Team> = cursor.try_collect().await?;
 
         Ok(teams)
     }
 
     pub async fn find_user_team_for_league(
-        db: &Database, 
-        owner_id: &str, 
+        db: &Database,
+        owner_id: &str,
         league_id: &str
     ) -> Option<Self> {
         let league_id = ObjectId::with_string(&league_id).expect("Can't get id from String");
         let owner_id = ObjectId::with_string(&owner_id).expect("Can't get id from String");
 
         Team::find_one(&db, doc! { "league": league_id, "owner": owner_id }, None).await.unwrap()
-    }    
+    }
 }

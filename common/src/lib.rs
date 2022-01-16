@@ -4,6 +4,8 @@ use jsonwebtoken::{EncodingKey, Header};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+pub mod filter;
+
 // TODO: Proper error handling
 
 static ONE_WEEK: i64 = 60 * 60 * 24 * 7; // in seconds
@@ -49,7 +51,7 @@ pub fn generate_token(
         &payload,
         &EncodingKey::from_secret(secret.as_bytes()),
     )
-    .unwrap()    
+    .unwrap()
 }
 
 // FIXME: This needs to gracefully send back an error if the session doesn't exist
@@ -71,7 +73,7 @@ pub fn decode_token(
         &token,
         &DecodingKey::from_secret(secret.as_bytes()),
         &Validation::default(),
-    )    
+    )
 }
 
 pub fn set_session(
@@ -120,7 +122,7 @@ pub fn verify_token(
 }
 
 pub fn get_current_user(
-    con: &mut redis::Connection, 
+    con: &mut redis::Connection,
     token_data: &TokenData<Claims>,
 ) -> Option<CurrentUser> {
     verify_token(con, &token_data).expect("Can't verify token");

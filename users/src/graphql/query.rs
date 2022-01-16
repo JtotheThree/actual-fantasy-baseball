@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::auth::*;
 use crate::config::CONFIG;
 use crate::models::*;
@@ -6,6 +8,8 @@ use async_graphql::*;
 use jsonwebtoken::TokenData;
 use wither::prelude::*;
 use wither::{bson::doc, mongodb::Database};
+
+use common::filter::process_filter;
 
 pub type AppSchema = Schema<Query, Mutation, EmptySubscription>;
 
@@ -58,7 +62,7 @@ impl Query {
 
         let mut con = redis_client.get_connection()?;
         let token_data = ctx.data_opt::<TokenData<Claims>>().unwrap();
-    
+
         let maybe_current_user = get_current_user(&mut con, token_data);
 
         if let Some(current_user) = maybe_current_user {
@@ -72,12 +76,22 @@ impl Query {
         }
     }
 
-    async fn users(&self, ctx: &Context<'_>) -> Vec<User> {
+    async fn users(&self, ctx: &Context<'_>, filter: Option<HashMap<String, serde_json::Value>>) -> Result<Vec<User>> {
         let db: &Database = ctx.data().expect("Cannot connect to database");
 
-        let users = User::find_all(db).await.expect("Cannot get leagues");
+        match filter {
+            Some(filter) => {
+                let filter = process_filter(filter)?;
+                let users = User::find_all(db, Some(filter)).await?;
 
-        users
+                Ok(users)
+            },
+            None => {
+                let users = User::find_all(db, None).await?;
+
+                Ok(users)
+            }
+        }
     }
 
     async fn user(&self, ctx: &Context<'_>, id: ID) -> Result<User> {
@@ -213,7 +227,7 @@ impl Mutation {
 
         let mut con = redis_client.get_connection()?;
         let token_data = ctx.data_opt::<TokenData<Claims>>().unwrap();
-    
+
         let maybe_current_user = get_current_user(&mut con, token_data);
 
         if let Some(current_user) = maybe_current_user {

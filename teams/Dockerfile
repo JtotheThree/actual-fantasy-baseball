@@ -1,5 +1,5 @@
 # Install cargo-chef
-FROM docker.io/library/rust:1.55 AS chef
+FROM docker.io/library/rust:1.58 AS chef
 RUN cargo install cargo-chef
 RUN mkdir /usr/src/build/
 COPY common /usr/src/common

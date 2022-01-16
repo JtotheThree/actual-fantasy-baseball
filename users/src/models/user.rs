@@ -3,6 +3,7 @@ use crate::graphql::League;
 use async_graphql::*;
 use futures::stream::TryStreamExt;
 use serde::{Deserialize, Serialize};
+use wither::bson::Document;
 use wither::prelude::*;
 use wither::{
     bson::{doc, oid::ObjectId},
@@ -38,8 +39,8 @@ impl User {
     }
 
     // query
-    pub async fn find_all(db: &Database) -> Result<Vec::<Self>> {
-        let cursor = User::find(&db, None, None).await?;
+    pub async fn find_all(db: &Database, filter: Option<Document>) -> Result<Vec::<Self>> {
+        let cursor = User::find(&db, filter, None).await?;
         let users: Vec<User> = cursor.try_collect().await?;
 
         Ok(users)
@@ -73,4 +74,3 @@ impl User {
         }
     }
 }
-

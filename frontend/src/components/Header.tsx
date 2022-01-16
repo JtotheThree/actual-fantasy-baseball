@@ -5,7 +5,7 @@ import { useRecoilValue, useSetRecoilState } from "recoil";
 
 import {tokenState} from '../components/App';
 import LeagueDropdown from '../components/LeagueDropdown';
-import { AUTH_TOKEN } from "../constant";
+import { AUTH_TOKEN, MY_ID } from "../constant";
 import { ME } from "../graphql/auth";
 
 type HeaderLinkProps = {
@@ -35,6 +35,10 @@ function HeaderRightAuth() {
     client.clearStore();
     navigate("/");
   };
+
+  if (data) {
+    localStorage.setItem(MY_ID, data.me.id);
+  }
 
   return (
     <>
