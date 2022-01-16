@@ -40,4 +40,4 @@ log = "0.4.14"
 chrono = { version = "0.4.19", features = ["serde"] }
 send_wrapper = "0.5.0"
 lazy_static = "1.4.0"
-futures = "0.3.17"
+futures = "0.3.19"

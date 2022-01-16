@@ -30,7 +30,7 @@ const gateway = new ApolloGateway({
     serviceList: [
         { name: "users", url: get_service_url("users", 8000) },
         { name: "leagues", url: get_service_url("leagues", 8001) },
-	{ name: "teams", url: get_service_url("teams", 8002) },
+	    { name: "teams", url: get_service_url("teams", 8002) },
         //{ name: "teams", url: get_service_url("teams", 8002) },
         //{ name: "satellites-service", url: get_service_url("satellites-service", 8002) },
         //{ name: "auth-service", url: get_service_url("auth-service", 8003) },
@@ -41,7 +41,12 @@ const gateway = new ApolloGateway({
 });
 
 const server = new ApolloServer({
-    gateway, subscriptions: false, context: ({ req }) => ({
+    cors: {
+		origin: '*',			// <- allow request from all domains
+		credentials: true}, 
+    gateway, 
+    subscriptions: false, 
+    context: ({ req }) => ({
         authHeaderValue: req.headers.authorization
     })
 });

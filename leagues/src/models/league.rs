@@ -1,6 +1,5 @@
 use async_graphql::*;
 use futures::stream::TryStreamExt;
-use std::collections::HashMap;
 use strum_macros::EnumString;
 use serde::{Deserialize, Serialize};
 use wither::prelude::*;
@@ -110,11 +109,11 @@ impl League {
         League::find_one(&db, doc! { "_id": oid }, None).await.unwrap()
     }
 
-    pub async fn find_by_name(db: &Database, name: &str) -> Option<Self> {
+    /* pub async fn find_by_name(db: &Database, name: &str) -> Option<Self> {
         League::find_one(&db, doc! { "username": name }, None)
             .await
             .unwrap()
-    }
+    } */
 
     pub async fn find_by_user_id(db: &Database, user_id: &ID) -> Result<Vec::<Self>> {
         let oid = ObjectId::with_string(&user_id).expect("Can't get id from String");

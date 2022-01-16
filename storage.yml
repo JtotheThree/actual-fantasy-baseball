@@ -2,7 +2,7 @@ version: "3.6"
 
 services:
   mongo:
-    image: mongo
+    image: docker.io/library/mongo
     container_name: mongo
     restart: always
     ports:
@@ -12,7 +12,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: admin
 
   mongo-express:
-    image: mongo-express
+    image: docker.io/library/mongo-express
     container_name: mongo-express
     restart: always
     ports:
@@ -30,7 +30,7 @@ services:
 
   # REDIS
   redis:
-    image: redis:alpine
+    image: docker.io/library/redis:alpine
     container_name: redis
     restart: always
     ports: 

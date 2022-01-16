@@ -25,7 +25,7 @@ services:
     environment:
       RUN_MODE: docker
     volumes:
-      - ./users/environments/:/app/environments/
+      - ./users/environments/:/app/environments/:Z
     ports:
       - "8000:8000"
 
@@ -39,7 +39,7 @@ services:
     environment:
       RUN_MODE: docker
     volumes:
-      - ./leagues/environments/:/app/environments/
+      - ./leagues/environments/:/app/environments/:Z
     ports:
       - "8001:8001"
 
@@ -53,6 +53,6 @@ services:
     environment:
       RUN_MODE: docker
     volumes:
-      - ./teams/environments/:/app/environments/
+      - ./teams/environments/:/app/environments/:Z
     ports:
       - "8002:8002"

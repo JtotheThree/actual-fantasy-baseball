@@ -1,0 +1,14 @@
+[build]
+target = "index.html"
+release = false
+dist = "dist"
+
+[serve]
+port = 8080
+open = true
+no_autoreload = false
+
+[[hooks]]
+stage = "pre_build"
+command = "npx"
+command_arguments = ["tailwindcss", "build", "-i", "main.css", "-o", "tailwind.css"]

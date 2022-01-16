@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+    font-family: 'germania_oneregular';
+    src: url('../public/fonts/germaniaone-regular-webfont.woff2') format('woff2'),
+         url('../public/fonts/germaniaone-regular-webfont.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'alegreyaregular';
+    src: url('../public/fonts/alegreya-regular-webfont.woff2') format('woff2'),
+         url('../public/fonts/alegreya-regular-webfont.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
