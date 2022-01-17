@@ -11,6 +11,7 @@ import League from '../routes/League';
 import CreateLeague from '../routes/CreateLeague';
 import JoinLeague from '../routes/JoinLeague';
 
+
 export const tokenState = atom({
   key: 'tokenState',
   default: localStorage.getItem(AUTH_TOKEN),
@@ -38,5 +39,6 @@ function App() {
     </div>
   );
 }
+
 
 export default App;

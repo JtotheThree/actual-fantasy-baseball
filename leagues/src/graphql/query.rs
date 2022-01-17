@@ -2,6 +2,7 @@ use crate::models::*;
 use common::*;
 use async_graphql::*;
 use jsonwebtoken::TokenData;
+use strum::IntoEnumIterator;
 use wither::prelude::*;
 use wither::{mongodb::Database};
 
@@ -102,6 +103,25 @@ impl Query {
             Err("Can't get league by id".into())
         }
     }
+
+    async fn meta_league_state(&self) -> HashMap<String, String> {
+        let mut values = HashMap::<String, String>::new();
+
+        for value in LeagueState::iter() {
+            match value {
+                LeagueState::Manual => {values.insert("MANUAL".to_string(), "Manual".to_string());},
+                LeagueState::Created => {values.insert("CREATED".to_string(), "Created".to_string());},
+                LeagueState::Drafting => {values.insert("DRAFTING".to_string(), "Drafting".to_string());},
+                LeagueState::SeasonStart => {values.insert("SEASON_START".to_string(), "Season Start".to_string());},
+                LeagueState::Playoffs => {values.insert("PLAYOFFS".to_string(), "Playoffs".to_string());},
+                LeagueState::RealmSeries => {values.insert("REALM_SERIES".to_string(), "Realm Series".to_string());},
+                LeagueState::SeasonEnd => {values.insert("SEASON_END".to_string(), "Season End".to_string());},
+            }
+        }
+
+        values
+    }
+
 
     #[graphql(entity)]
     async fn find_user_by_id(&self, id: ID) -> User {

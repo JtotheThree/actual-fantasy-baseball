@@ -1,10 +1,10 @@
 import { useQuery } from '@apollo/client';
 import { Link, useNavigate } from 'react-router-dom';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useRecoilState } from 'recoil';
 
 import { Dropdown, DropdownItem } from '../components/Dropdown';
 import { SELECTED_LEAGUE } from '../constant';
-import { ME } from '../graphql/auth';
+import { ME } from '../graphql/Auth';
 import { selectedLeagueState } from './App';
 
 function Selected(id: string, name: string) {

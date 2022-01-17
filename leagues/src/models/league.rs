@@ -1,11 +1,13 @@
+use std::fmt;
+
 use async_graphql::*;
 use futures::stream::TryStreamExt;
-use strum_macros::EnumString;
+use strum_macros::{EnumIter, EnumString};
 use serde::{Deserialize, Serialize};
 use wither::prelude::*;
 use wither::{bson::{doc, oid::ObjectId, Document}, bson, mongodb::Database};
 
-#[derive(Copy, Clone, Eq, PartialEq, Debug, Enum, EnumString, Serialize, Deserialize)]
+#[derive(Copy, Clone, Eq, EnumIter, PartialEq, Enum, EnumString, Serialize, Deserialize)]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 pub enum LeagueState {
     Manual,
@@ -15,6 +17,34 @@ pub enum LeagueState {
     Playoffs,
     RealmSeries,
     SeasonEnd,
+}
+
+impl fmt::Display for LeagueState {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match &self {
+            LeagueState::Manual => write!(f, "Manual"),
+            LeagueState::Created => write!(f, "Created"),
+            LeagueState::Drafting => write!(f, "Drafting"),
+            LeagueState::SeasonStart=> write!(f, "Season Start"),
+            LeagueState::Playoffs => write!(f, "Playoffs"),
+            LeagueState::RealmSeries=> write!(f, "Realm Series"),
+            LeagueState::SeasonEnd=> write!(f, "Season End"),
+        }
+    }
+}
+
+impl fmt::Debug for LeagueState {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match &self {
+            LeagueState::Manual => write!(f, "MANUAL"),
+            LeagueState::Created => write!(f, "CREATED"),
+            LeagueState::Drafting => write!(f, "DRAFTING"),
+            LeagueState::SeasonStart=> write!(f, "SEASON_START"),
+            LeagueState::Playoffs => write!(f, "PLAYOFFS"),
+            LeagueState::RealmSeries=> write!(f, "REALM_SERIES"),
+            LeagueState::SeasonEnd=> write!(f, "SEASON_END"),
+        }
+    }
 }
 
 /// League representation

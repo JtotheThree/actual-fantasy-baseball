@@ -1,4 +1,4 @@
-import { ReactChildren, ReactNode } from "react"
+import { ReactNode } from "react"
 
 type DropdownProps = {
   selected: any,

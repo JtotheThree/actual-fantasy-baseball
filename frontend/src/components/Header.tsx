@@ -1,4 +1,4 @@
-import { gql, useApolloClient, useQuery } from "@apollo/client";
+import { useApolloClient, useQuery } from "@apollo/client";
 import { MouseEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useRecoilValue, useSetRecoilState } from "recoil";
@@ -6,7 +6,7 @@ import { useRecoilValue, useSetRecoilState } from "recoil";
 import {tokenState} from '../components/App';
 import LeagueDropdown from '../components/LeagueDropdown';
 import { AUTH_TOKEN, MY_ID } from "../constant";
-import { ME } from "../graphql/auth";
+import { ME } from "../graphql/Auth";
 
 type HeaderLinkProps = {
   name: string,

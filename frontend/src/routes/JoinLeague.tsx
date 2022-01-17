@@ -1,15 +1,18 @@
 import { gql, useApolloClient, useMutation, useQuery } from "@apollo/client"
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSetRecoilState } from "recoil";
 import { selectedLeagueState } from "../components/App";
 import { Card, CardBody, CardFooter, CardHeader } from "../components/Card";
+import Loader from "../components/Loader";
 import { MY_ID, SELECTED_LEAGUE } from "../constant";
-import { JOIN_LEAGUE } from "../graphql/league";
+import { JOIN_LEAGUE } from "../graphql/League";
 
 
 const PUBLIC_LEAGUES = gql`
 query Leagues (
   $excludeId: ID!
+  $search: String
 ) {
   leagues(filter: {
     _and: [
@@ -19,6 +22,10 @@ query Leagues (
       }},
       {managers: {
         _ne: $excludeId
+      }},
+      {name: {
+        _regex: $search
+        _options: "i"
       }}
     ]
   }) {
@@ -39,12 +46,18 @@ query Leagues (
 }
 `;
 
-export default function JoinLeague() {
+type LeagueListProps = {
+  search: string,
+}
+
+function LeagueList(props: LeagueListProps) {
   const my_id = localStorage.getItem(MY_ID);
+
   const { loading, error, data } = useQuery(PUBLIC_LEAGUES, {
     fetchPolicy: "network-only",
     variables: {
       excludeId: my_id,
+      search: props.search,
     }
   });
 
@@ -68,9 +81,7 @@ export default function JoinLeague() {
 
   if (loading) {
     return (
-      <div className="flex flex-col md:w-1/3 mx-auto p-8 space-y-8">
-        Loading...
-      </div>
+      <Loader />
     )
   }
 
@@ -78,14 +89,6 @@ export default function JoinLeague() {
     return (
       <div className="flex flex-col md:w-1/3 mx-auto p-8 space-y-8">
         {error}
-      </div>
-    )
-  }
-
-  if (data.leagues.length === 0) {
-    return (
-      <div className="flex flex-col md:w-1/3 mx-auto p-8 space-y-8">
-        No public leagues available to join
       </div>
     )
   }
@@ -114,9 +117,28 @@ export default function JoinLeague() {
     )
   })
 
+  let notFound = props.search ? "No leagues found" : "No public leagues to join";
+
+  return (
+    <div>
+      {data.leagues.length === 0 ? <h1>{notFound}</h1> : null}
+      {leagues}
+    </div>
+  )
+}
+
+export default function JoinLeague() {
+  const [ search, setSearch ] = useState("");
+
   return (
     <div className="flex flex-col md:w-1/3 mx-auto p-8 space-y-8">
-      {leagues}
+      <input
+        value={search}
+        onChange={(e: any) => setSearch(e.target.value)}
+        placeholder="Search league name..."
+        className="p-2 border-0 border-b-2 border-black outline-none bg-paper focus:ring focus:ring-red-700"
+      />
+      <LeagueList search={search} />
     </div>
   )
 }

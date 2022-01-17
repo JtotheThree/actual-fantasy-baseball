@@ -18,41 +18,41 @@ pub struct Team {
     pub id: Option<ObjectId>,
     pub name: String,
 
-    pub league: ObjectId,
-    pub owner: ObjectId,
+    pub league: String,
+    pub owner: String,
 
     pub gold: i64,
     pub roster: Roster,
     pub lineup: Vec<Option<LineupSlot>>,
     pub starting_pitcher: Option<StartingPitcher>,
-    pub reserves: Vec<Option<ID>>,
-    pub pitchers: Vec<Option<ID>>,
+    pub reserves: Vec<Option<String>>,
+    pub pitchers: Vec<Option<String>>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, SimpleObject)]
 #[serde(rename_all = "camelCase")]
 pub struct Roster {
-    pub starting_pitchers: Vec<Option<ID>>,
-    pub relief_pitchers: Vec<Option<ID>>,
-    pub catchers: Vec<Option<ID>>,
-    pub infielders: Vec<Option<ID>>,
-    pub outfielders: Vec<Option<ID>>,
+    pub starting_pitchers: Vec<Option<String>>,
+    pub relief_pitchers: Vec<Option<String>>,
+    pub catchers: Vec<Option<String>>,
+    pub infielders: Vec<Option<String>>,
+    pub outfielders: Vec<Option<String>>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, SimpleObject)]
 #[serde(rename_all = "camelCase")]
 pub struct LineupSlot {
-    pub player_id: ID,
+    pub player_id: String,
     pub position: String,
-    pub sub_id: ID,
+    pub sub_id: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, SimpleObject)]
 #[serde(rename_all = "camelCase")]
 pub struct StartingPitcher {
-    pub player_id: ID,
-    pub sub1_id: ID,
-    pub sub2_id: Option<ID>,
+    pub player_id: String,
+    pub sub1_id: String,
+    pub sub2_id: Option<String>,
 }
 
 impl Roster {
@@ -70,14 +70,11 @@ impl Roster {
 impl Team {
     pub fn new_team(name: &str, league_id: &str, owner_id: &str
     ) -> Self {
-        let league_id = ObjectId::with_string(&league_id).expect("Can't get id from String");
-        let owner_id = ObjectId::with_string(&owner_id).expect("Can't get id from String");
-
         Team {
             id: None,
             name: String::from(name),
-            league: league_id,
-            owner: owner_id,
+            league: league_id.to_string(),
+            owner: owner_id.to_string(),
             gold: 500000,
             lineup: vec![None; 9],
             starting_pitcher: None,
@@ -115,8 +112,8 @@ impl Team {
     }
 
     pub async fn find_by_league_id(db: &Database, league_id: &str) -> Result<Vec::<Self>> {
-        let league_id = ObjectId::with_string(&league_id).expect("Can't get id from String");
-        let cursor = Team::find(&db, doc! {"leagueId": league_id }, None).await?;
+        //let league_id = ObjectId::with_string(&league_id).expect("Can't get id from String");
+        let cursor = Team::find(&db, doc! {"league": league_id }, None).await?;
 
         let teams: Vec<Team> = cursor.try_collect().await?;
 

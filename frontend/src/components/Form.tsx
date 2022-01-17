@@ -1,4 +1,4 @@
-import React, { MutableRefObject, Ref } from 'react';
+import React from 'react';
 
 namespace Form {
   type NumberProps = {
@@ -86,6 +86,31 @@ namespace Form {
           {props.title}
         </span>
       </h2>
+    )
+  }
+
+  type InlineProps = {
+    error: string,
+    children: React.ReactNode,
+    submitLabel: string,
+    onSubmit: React.FormEventHandler<HTMLFormElement>,
+  }
+
+  export function Inline(props: InlineProps) {
+    return (
+      <form className="md:w-1/2-screen m-0 p-12 w-full tw-h-full" onSubmit={props.onSubmit}>
+        <span className="text-red-800">{props.error}</span>
+        {props.children}
+
+        <div className="mt-2">
+          <button
+            className="btn p-3 my-2 bg-gray-700 text-paper rounded-sm border-b-4 border-paper w-full font-bold hover:bg-red-800"
+            type="submit"
+          >
+            {props.submitLabel}
+          </button>
+        </div>
+      </form>
     )
   }
 

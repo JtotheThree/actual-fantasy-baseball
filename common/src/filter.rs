@@ -67,6 +67,10 @@ fn conditional_key(key: &str) -> bool {
         "_comment" => true,
         "_rand" => true,
 
+
+        /* OTHERS, NEED TO LOOK THESE UP */
+        "_options" => true,
+
         _ => false
     }
 }

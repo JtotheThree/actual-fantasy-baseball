@@ -86,19 +86,14 @@ impl League {
         &self.id
     }
 
-    async fn team(&self, ctx: &Context<'_>) -> Option<Team> {
+    async fn teams(&self, ctx: &Context<'_>) -> Result<Vec<Team>> {
         let db: &Database = ctx.data().expect("Cannot connect to database");
-        let redis_client: &redis::Client = ctx.data().expect("Cannot connect to cache");
+        let maybe_teams = Team::find_by_league_id(db, &self.id).await;
 
-        let mut con = redis_client.get_connection().expect("Cannot connect to cache");
-        let token_data = ctx.data_opt::<TokenData<Claims>>().unwrap();
-
-        let maybe_current_user = get_current_user(&mut con, token_data);
-
-        if let Some(current_user) = maybe_current_user {
-            Team::find_user_team_for_league(db, &current_user.id, &self.id).await
+        if let Ok(teams) = maybe_teams {
+            Ok(teams)
         } else {
-            None
+            Err("Can't get teams for league".into())
         }
     }
 }
@@ -165,7 +160,7 @@ pub struct Mutation;
 
 #[Object(extends, cache_control(max_age = 60))]
 impl Mutation {
-    async fn create_team(&self, ctx: &Context<'_>, input: CreateTeamInput) -> Result<Team, Error> {
+    async fn create_team(&self, ctx: &Context<'_>, name: String, league_id: ID) -> Result<Team, Error> {
         let db: &Database = ctx.data()?;
         let redis_client: &redis::Client = ctx.data()?;
 
@@ -175,7 +170,7 @@ impl Mutation {
         let maybe_current_user = get_current_user(&mut con, token_data);
 
         if let Some(current_user) = maybe_current_user {
-            let mut new_team = Team::new_team(&input.name, &input.league_id, &current_user.id);
+            let mut new_team = Team::new_team(&name, &league_id, &current_user.id);
 
             if let Ok(_) = new_team.save(&db, None).await {
                 Ok(new_team)
@@ -186,13 +181,4 @@ impl Mutation {
             Err("Can't create team".into())
         }
     }
-}
-
-
-// Inputs
-
-#[derive(Clone, InputObject)]
-pub struct CreateTeamInput {
-    pub name: String,
-    pub league_id: ID,
 }

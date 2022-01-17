@@ -1,4 +1,4 @@
-import { Component, ReactChild, ReactNode } from "react"
+import { ReactNode } from "react"
 
 type CardFooterProps = {
   children: ReactNode
@@ -18,7 +18,7 @@ type CardBodyProps = {
 
 export function CardBody(props: CardBodyProps) {
   return (
-    <div className="text-base text-gray-700">
+    <div className="p-4 text-base text-gray-700">
       {props.children}
     </div>
   )
@@ -30,7 +30,7 @@ type CardSubHeaderProps = {
 
 export function CardSubHeader(props: CardSubHeaderProps) {
   return (
-    <div className="mb-3 text-sm text-gray-500">
+    <div className="p-2 mb-3 text-sm text-gray-500">
       {props.content}
     </div>
   )

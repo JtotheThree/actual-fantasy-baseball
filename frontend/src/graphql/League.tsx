@@ -13,14 +13,20 @@ query GetLeague (
     state
     manualState
     owner {
+      id
       username
     }
     managers {
+      id
       username
     }
-    team {
+    teams {
       id
       name
+      owner {
+        id
+        username
+      }
     }
   }
 }
