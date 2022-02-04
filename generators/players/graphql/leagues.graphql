@@ -1,0 +1,13 @@
+query Leagues
+{
+  leagues {
+    id
+    name
+    status
+    maxPlayers
+    owner {
+      id
+      username
+    }
+  }
+}

@@ -4,7 +4,10 @@ use jsonwebtoken::{EncodingKey, Header};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+pub mod enums;
 pub mod filter;
+pub mod meta;
+pub mod structs;
 
 // TODO: Proper error handling
 

@@ -41,3 +41,28 @@ mutation JoinLeague(
   }
 }
 `;
+
+export const UPDATE_LEAGUE = gql`
+mutation UpdateLeague(
+  $id: ID!
+  $description: String
+  $public: Boolean
+  $password: String
+  $maxPlayers: Int
+  $state: LeagueState
+  $status: LeagueStatus
+) {
+  updateLeague(
+    input:{
+      id: $id
+ 			description: $description
+      public: $public
+      password: $password
+      maxPlayers: $maxPlayers
+      state: $state
+      status: $status
+  }) {
+    id
+  }
+}
+`;

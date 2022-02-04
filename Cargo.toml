@@ -2,6 +2,8 @@
 members = [
     "common",
     "leagues",
+    "players",
     "teams",
     "users",
+    "generators/players",
 ]

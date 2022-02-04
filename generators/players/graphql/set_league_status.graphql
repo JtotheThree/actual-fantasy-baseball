@@ -1,0 +1,11 @@
+mutation SetLeagueState(
+  $id: ID!
+  $state: LeagueState!
+) {
+  setLeagueState(
+    id: $id
+    state: $state
+  ) {
+    id
+  }
+}

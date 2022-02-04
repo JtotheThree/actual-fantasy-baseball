@@ -1,0 +1,35 @@
+mutation CreatePlayer(
+  $name: String!
+  $league: String!
+  $cost: Int!
+  $race: Race!
+  $class: Class!
+  $gender: Gender!
+  $maxHealth: Int!
+  $strength: Int!
+  $dexterity: Int!
+  $constitution: Int!
+  $intelligence: Int!
+  $wisdom: Int!
+  $charisma: Int!
+  $traits: [Trait!]!
+) {
+  createPlayer(input: {
+    name: $name
+    league: $league
+    cost: $cost
+    race: $race
+    class: $class
+    gender: $gender
+    maxHealth: $maxHealth
+    strength: $strength
+    dexterity: $dexterity
+    constitution: $constitution
+    intelligence: $intelligence
+    wisdom: $wisdom
+    charisma: $charisma
+    traits: $traits
+  }) {
+    id
+  }
+}

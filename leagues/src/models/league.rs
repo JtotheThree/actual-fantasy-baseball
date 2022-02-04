@@ -7,6 +7,13 @@ use serde::{Deserialize, Serialize};
 use wither::prelude::*;
 use wither::{bson::{doc, oid::ObjectId, Document}, bson, mongodb::Database};
 
+#[derive(Copy, Clone, Debug, Eq, EnumIter, PartialEq, Enum, EnumString, Serialize, Deserialize)]
+#[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
+pub enum LeagueStatus {
+    PlayerGeneration,
+    PlayersCompleted,
+}
+
 #[derive(Copy, Clone, Eq, EnumIter, PartialEq, Enum, EnumString, Serialize, Deserialize)]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 pub enum LeagueState {
@@ -68,6 +75,8 @@ pub struct League {
     pub state: LeagueState,
     pub manual_state: bool,
 
+    pub status: LeagueStatus,
+
     /// Owner: User!
     pub owner: String,
     // Users: [User!]!
@@ -113,6 +122,7 @@ impl League {
             games_per_season: None,
             playoff_rounds: None,
             realm_series_games: None,
+            status: LeagueStatus::PlayerGeneration,
             state,
             manual_state,
             password,
@@ -174,5 +184,38 @@ impl League {
             Err(format!("League with id: {:?} not found", &id).into())
         }
     }
+
+    pub async fn set_league_state(db: &Database, id: String, state: LeagueState) -> Result<Self> {
+        let query = doc! {
+            "_id": ObjectId::with_string(&id)?
+        };
+
+        if let Some(mut league) = League::find_one(db, Some(query), None).await? {
+            league.state = state;
+
+            league.save(db, None).await?;
+
+            Ok(league)
+        } else {
+            Err(format!("League with id: {:?} not found", &id).into())
+        }
+    }
+
+    pub async fn set_league_status(db: &Database, id: String, status: LeagueStatus) -> Result<Self> {
+        let query = doc! {
+            "_id": ObjectId::with_string(&id)?
+        };
+
+        if let Some(mut league) = League::find_one(db, Some(query), None).await? {
+            league.status = status;
+
+            league.save(db, None).await?;
+
+            Ok(league)
+        } else {
+            Err(format!("League with id: {:?} not found", &id).into())
+        }
+    }
+
 
 }

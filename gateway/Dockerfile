@@ -8,5 +8,6 @@ RUN chmod +x wait-for-it.sh
 CMD ./wait-for-it.sh users:8000 -s -- \
     ./wait-for-it.sh leagues:8001 -s -- \
     ./wait-for-it.sh teams:8002 -s -- \
+    ./wait-for-it.sh players:8003 -s -- \
     npm run start-gateway
 EXPOSE 4000

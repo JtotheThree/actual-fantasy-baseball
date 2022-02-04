@@ -9,6 +9,7 @@ use wither::{mongodb::Database};
 use std::collections::HashMap;
 
 use common::filter::process_filter;
+use common::meta::MetaSelect;
 
 pub type AppSchema = Schema<Query, Mutation, EmptySubscription>;
 
@@ -28,6 +29,10 @@ impl League {
 
     async fn description(&self) -> &str {
         &self.description
+    }
+
+    async fn status(&self) -> LeagueStatus {
+        self.status
     }
 
     async fn public(&self) -> bool {
@@ -104,22 +109,15 @@ impl Query {
         }
     }
 
-    async fn meta_league_state(&self) -> HashMap<String, String> {
-        let mut values = HashMap::<String, String>::new();
+    async fn meta_league_state(&self) -> MetaSelect {
+        let mut select_values = MetaSelect::default();
 
         for value in LeagueState::iter() {
-            match value {
-                LeagueState::Manual => {values.insert("MANUAL".to_string(), "Manual".to_string());},
-                LeagueState::Created => {values.insert("CREATED".to_string(), "Created".to_string());},
-                LeagueState::Drafting => {values.insert("DRAFTING".to_string(), "Drafting".to_string());},
-                LeagueState::SeasonStart => {values.insert("SEASON_START".to_string(), "Season Start".to_string());},
-                LeagueState::Playoffs => {values.insert("PLAYOFFS".to_string(), "Playoffs".to_string());},
-                LeagueState::RealmSeries => {values.insert("REALM_SERIES".to_string(), "Realm Series".to_string());},
-                LeagueState::SeasonEnd => {values.insert("SEASON_END".to_string(), "Season End".to_string());},
-            }
+            select_values.values.push(format!{"{:?}", value});
+            select_values.labels.push(format!{"{}", value});
         }
 
-        values
+        select_values
     }
 
 
@@ -236,6 +234,26 @@ impl Mutation {
             Ok(league)
         } else {
             Err("Unable to join league".into())
+        }
+    }
+
+    async fn set_league_state(&self, ctx: &Context<'_>, id: ID, state: LeagueState) -> Result<League, Error> {
+        let db: &Database = ctx.data()?;
+
+        if let Ok(league) = League::set_league_state(&db, id.to_string(), state).await {
+            Ok(league)
+        } else {
+            Err("Cannot update league state".into())
+        }
+    }
+
+    async fn set_league_status(&self, ctx: &Context<'_>, id: ID, status: LeagueStatus) -> Result<League, Error> {
+        let db: &Database = ctx.data()?;
+
+        if let Ok(league) = League::set_league_status(&db, id.to_string(), status).await {
+            Ok(league)
+        } else {
+            Err("Cannot update league status".into())
         }
     }
 

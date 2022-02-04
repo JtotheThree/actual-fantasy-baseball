@@ -14,3 +14,8 @@ serde_json = "1.0.61"
 chrono = { version = "0.4.19", features = ["serde"] }
 redis = { version = "0.21.2", features = ["tokio-comp"] }
 uuid = {version = "0.8.2", features = ["v4"] }
+strum = "0.23"
+strum_macros = "0.23"
+rand = "0.8.4"
+
+async-graphql = "2.9.15"

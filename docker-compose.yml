@@ -1,6 +1,6 @@
 version: "3.9"
 
-services:    
+services:
   # GATEWAY for GraphQL
   gateway:
     build:
@@ -56,3 +56,30 @@ services:
       - ./teams/environments/:/app/environments/:Z
     ports:
       - "8002:8002"
+
+  # PLAYERS service
+  players:
+    build:
+      context: .
+      dockerfile: ./players/Dockerfile
+    container_name: players
+    restart: always
+    environment:
+      RUN_MODE: docker
+    volumes:
+      - ./players/environments/:/app/environments/:Z
+    ports:
+      - "8003:8003"
+
+
+### GENERATORS
+  gen_names:
+    build:
+      context: ./generators/names
+#      dockerfile: ./generators/names/Dockerfile
+    container_name: gen_names
+    restart: always
+    volumes:
+      - ./generators/names/models/:/app/models/:Z
+    ports:
+      - "9000:9000"

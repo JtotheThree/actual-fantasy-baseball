@@ -1,0 +1,230 @@
+directive @composedGraph(version: Int!) on SCHEMA
+
+directive @graph(name: String!, url: String!) on SCHEMA
+
+directive @owner(graph: String!) on OBJECT
+
+directive @key(fields: String!, graph: String!) on OBJECT
+
+directive @resolve(graph: String!) on FIELD_DEFINITION
+
+directive @provides(fields: String!) on FIELD_DEFINITION
+
+directive @requires(fields: String!) on FIELD_DEFINITION
+
+enum Class {
+  BARD
+  CLERIC
+  DRUID
+  FIGHTER
+  PALADIN
+  RANGER
+  ROGUE
+  WIZARD
+}
+
+input CreateLeagueInput {
+  name: String!
+  description: String!
+  public: Boolean!
+  password: String
+  maxPlayers: Int!
+  manualState: Boolean!
+}
+
+input CreatePlayerInput {
+  name: String!
+  league: String!
+  cost: Int!
+  gender: Gender!
+  race: Race!
+  class: Class!
+  maxHealth: Int!
+  strength: Int!
+  dexterity: Int!
+  constitution: Int!
+  intelligence: Int!
+  wisdom: Int!
+  charisma: Int!
+  traits: [Trait!]!
+  hiddenTraits: [Trait!]
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+# A scalar that can represent any JSON Object value.
+scalar JSONObject
+
+type League {
+  id: ID!
+  name: String!
+  description: String!
+  status: LeagueStatus!
+  public: Boolean!
+  maxPlayers: Int!
+  state: LeagueState!
+  manualState: Boolean!
+  owner: User!
+  managers: [User!]!
+  managersCount: Int!
+  user: User!
+  teams: [Team!]!
+}
+
+enum LeagueState {
+  MANUAL
+  CREATED
+  DRAFTING
+  SEASON_START
+  PLAYOFFS
+  REALM_SERIES
+  SEASON_END
+}
+
+enum LeagueStatus {
+  PLAYER_GENERATION
+  PLAYERS_COMPLETED
+}
+
+type LineupSlot {
+  playerId: String!
+  position: String!
+  subId: String!
+}
+
+input LoginInput {
+  usernameOrEmail: String!
+  password: String!
+}
+
+type LoginResponse {
+  id: ID!
+  username: String!
+  email: String!
+  role: String!
+  token: String!
+}
+
+type LogoutResponse {
+  status: String!
+}
+
+type MetaSelect {
+  values: [String!]!
+  labels: [String!]!
+}
+
+type Mutation {
+  signup(newUser: SignupInput!): User!
+  login(credentials: LoginInput!): LoginResponse!
+  logout: LogoutResponse!
+  selectLeague(id: ID!): League!
+  createLeague(input: CreateLeagueInput!): League!
+  joinLeague(id: ID!): League!
+  setLeagueState(id: ID!, state: LeagueState!): League!
+  addManagerToLeague(leagueId: String!, userId: String!): League!
+  createTeam(name: String!, leagueId: ID!): Team!
+  createPlayer(input: CreatePlayerInput!): Player!
+}
+
+type Player {
+  id: ID!
+  name: String!
+  cost: Int!
+  gender: Gender!
+  race: Race!
+  class: Class!
+  health: Int!
+  maxHealth: Int!
+  strength: Int!
+  dexterity: Int!
+  constitution: Int!
+  intelligence: Int!
+  wisdom: Int!
+  charisma: Int!
+  traits: [Trait!]!
+  hiddenTraits: [Trait!]
+}
+
+type Query {
+  # Get current user info
+  me: User!
+  users(filter: JSONObject): [User!]!
+  user(id: ID!): User!
+  leagues(filter: JSONObject): [League!]!
+  league(id: ID!): League!
+  metaLeagueState: MetaSelect!
+  teams(filter: JSONObject): [Team!]!
+  team(id: ID!): Team!
+  players(filter: JSONObject): [Player!]!
+  player(id: ID!): Player!
+}
+
+enum Race {
+  DWARF
+  ELF
+  GOBLIN
+  HALFLING
+  HUMAN
+  ORC
+}
+
+type Roster {
+  startingPitchers: [String]!
+  reliefPitchers: [String]!
+  catchers: [String]!
+  infielders: [String]!
+  outfielders: [String]!
+}
+
+input SignupInput {
+  username: String!
+  email: String!
+  password: String!
+}
+
+# Object Implementations
+type Team {
+  id: ID!
+  name: String!
+  owner: User!
+  league: League!
+  gold: Int!
+  roster: Roster!
+  lineup: [LineupSlot]!
+}
+
+enum Trait {
+  HOT_TEMPER
+  LUCKY
+  BORING
+  SUCK_UP
+  QUICK
+  GREEDY
+  CLEPTOMANIAC
+  TOUGH
+  CLUMSY
+  SURE_SHOT
+  LIGHTNING_ARM
+  DIRTY
+  LAZY
+  FAT
+  BELLIGERENT
+  QUICK_WITTED
+  GOON
+  TIMID
+}
+
+type User {
+  id: ID!
+  username: String!
+  email: String!
+  role: String!
+  selectedLeague: League
+  joinedLeagues: [League!]!
+  ownedLeagues: [League!]!
+  teams: [Team!]!
+}
