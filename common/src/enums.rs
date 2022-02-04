@@ -3,6 +3,7 @@ use core::fmt;
 use async_graphql::*;
 use serde::{Deserialize, Serialize};
 use strum_macros::{EnumIter, EnumString, EnumCount as EnumCountMacro};
+use strum::IntoEnumIterator;
 use strum::EnumCount;
 
 use rand::{
@@ -79,7 +80,6 @@ impl Distribution<Race> for Standard {
 pub enum Class {
     Bard,
     Cleric,
-    Druid,
     Fighter,
     Paladin,
     Ranger,
@@ -87,12 +87,25 @@ pub enum Class {
     Wizard,
 }
 
+impl fmt::Display for Class {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match &self {
+            Class::Bard => write!(f, "Bard"),
+            Class::Cleric => write!(f, "Cleric"),
+            Class::Fighter => write!(f, "Fighter"),
+            Class::Paladin => write!(f, "Paladin"),
+            Class::Ranger => write!(f, "Ranger"),
+            Class::Rogue => write!(f, "Rogue"),
+            Class::Wizard => write!(f, "Wizard"),
+        }
+    }
+}
+
 impl fmt::Debug for Class {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match &self {
             Class::Bard => write!(f, "BARD"),
             Class::Cleric => write!(f, "CLERIC"),
-            Class::Druid => write!(f, "DRUID"),
             Class::Fighter => write!(f, "FIGHTER"),
             Class::Paladin => write!(f, "PALADIN"),
             Class::Ranger => write!(f, "RANGER"),
@@ -107,10 +120,10 @@ impl Distribution<Class> for Standard {
         match rng.gen_range(0..Class::COUNT) {
             0 => Class::Bard,
             1 => Class::Cleric,
-            2 => Class::Druid,
-            3 => Class::Fighter,
-            4 => Class::Paladin,
-            5 => Class::Ranger,
+            2 => Class::Fighter,
+            3 => Class::Paladin,
+            4 => Class::Ranger,
+            5 => Class::Rogue,
             6 => Class::Wizard,
             _ => Class::Fighter,
         }

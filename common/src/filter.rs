@@ -71,6 +71,10 @@ fn conditional_key(key: &str) -> bool {
         /* OTHERS, NEED TO LOOK THESE UP */
         "_options" => true,
 
+
+        // Aggregation
+        "_sort" => true,
+
         _ => false
     }
 }

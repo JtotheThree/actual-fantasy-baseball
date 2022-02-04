@@ -4,10 +4,12 @@ use async_graphql::*;
 use jsonwebtoken::TokenData;
 use strum::IntoEnumIterator;
 use wither::prelude::*;
-use wither::{mongodb::Database};
+use wither::{mongodb::Database, bson::Document};
 
 use std::collections::HashMap;
+use std::convert::TryFrom;
 
+use common::enums::Class;
 use common::filter::process_filter;
 use common::meta::MetaSelect;
 
@@ -25,6 +27,18 @@ impl Player {
 
     async fn name(&self) -> &str {
         &self.name
+    }
+
+    async fn league(&self) -> League {
+        League{ id: ID::from(&self.league) }
+    }
+
+    async fn team(&self) -> Option<Team> {
+        if let Some(id) = &self.team {
+            Some(Team{ id: ID::from(&id) })
+        } else {
+            None
+        }
     }
 
     async fn cost(&self) -> i64 {
@@ -100,22 +114,32 @@ pub struct Query;
 
 #[Object(extends, cache_control(max_age = 60))]
 impl Query {
-    async fn players(&self, ctx: &Context<'_>, filter: Option<HashMap<String, serde_json::Value>>) -> Result<Vec<Player>> {
+    async fn players(
+        &self, ctx: &Context<'_>,
+        filter: Option<HashMap<String, serde_json::Value>>,
+        sort: Option<HashMap<String, serde_json::Value>>,
+    ) -> Result<Vec<Player>>
+    {
         let db: &Database = ctx.data().expect("Can't connect to database");
 
-        match filter {
-            Some(filter) => {
-                let filter = process_filter(filter)?;
-                let players = Player::find_all(db, Some(filter)).await?;
+        let filter = if let Some(filter) = filter {
+            let filter = process_filter(filter)?;
+            Some(filter)
+        } else {
+            None
+        };
 
-                Ok(players)
-            },
-            None => {
-                let players = Player::find_all(db, None).await.expect("Cannot get players");
+        let sort = if let Some(sort) = sort {
+            let sort: serde_json::Map<String, serde_json::Value> = sort.into_iter().collect();
+            let sort = Document::try_from(sort)?;
+            Some(sort)
+        } else {
+            None
+        };
 
-                Ok(players)
-            }
-        }
+        let players = Player::find_all(db, filter, sort).await?;
+
+        Ok(players)
     }
 
     async fn player(&self, ctx: &Context<'_>, id: ID) -> Result<Player> {
@@ -150,6 +174,17 @@ impl Query {
             Err("No player found".into())
         }
     }
+
+    async fn meta_class(&self) -> MetaSelect {
+        let mut select_values = MetaSelect::default();
+
+        for value in Class::iter() {
+            select_values.values.push(format!("{:?}", value));
+            select_values.labels.push(format!("{}", value));
+        }
+
+        select_values
+    }
 }
 
 #[Object(extends, cache_control(max_age = 60))]
@@ -158,6 +193,18 @@ impl League {
     async fn id(&self) -> &ID {
         &self.id
     }
+
+    async fn players(&self, ctx: &Context<'_>) -> Result<Vec<Player>> {
+        let db: &Database = ctx.data().expect("Cannot connect to database");
+
+        let maybe_players = Player::find_by_league(db, &self.id).await;
+
+        if let Ok(players) = maybe_players {
+            Ok(players)
+        } else {
+            Err("Can't get players for league".into())
+        }
+    }
 }
 
 #[Object(extends, cache_control(max_age = 60))]
@@ -165,6 +212,18 @@ impl Team {
     #[graphql(external)]
     async fn id(&self) -> &ID {
         &self.id
+    }
+
+    async fn players(&self, ctx: &Context<'_>) -> Result<Vec<Player>> {
+        let db: &Database = ctx.data().expect("Cannot connect to database");
+
+        let maybe_players = Player::find_by_team(db, &self.id).await;
+
+        if let Ok(players) = maybe_players {
+            Ok(players)
+        } else {
+            Err("Can't get players for league".into())
+        }
     }
 }
 

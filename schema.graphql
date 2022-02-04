@@ -125,6 +125,7 @@ type Mutation {
   createLeague(input: CreateLeagueInput!): League!
   joinLeague(id: ID!): League!
   setLeagueState(id: ID!, state: LeagueState!): League!
+  setLeagueStatus(id: ID!, status: LeagueStatus!): League!
   addManagerToLeague(leagueId: String!, userId: String!): League!
   createTeam(name: String!, leagueId: ID!): Team!
   createPlayer(input: CreatePlayerInput!): Player!

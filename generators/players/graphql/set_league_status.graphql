@@ -1,10 +1,10 @@
-mutation SetLeagueState(
+mutation SetLeagueStatus(
   $id: ID!
-  $state: LeagueState!
+  $status: LeagueStatus!
 ) {
-  setLeagueState(
+  setLeagueStatus(
     id: $id
-    state: $state
+    status: $status
   ) {
     id
   }

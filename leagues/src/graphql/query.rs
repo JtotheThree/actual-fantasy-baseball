@@ -218,6 +218,35 @@ impl Mutation {
         }
     }
 
+    async fn update_league(&self, ctx: &Context<'_>, input: UpdateLeagueInput) -> Result<League, Error> {
+        let db: &Database = ctx.data()?;
+
+        let redis_client: &redis::Client = ctx.data()?;
+
+        let mut con = redis_client.get_connection()?;
+        let token_data = ctx.data_opt::<TokenData<Claims>>().unwrap();
+
+        let maybe_current_user = get_current_user(&mut con, token_data);
+
+        if let Some(current_user) = maybe_current_user {
+            let maybe_league = League::find_by_id(&db, &input.id.clone()).await;
+
+            if let Some(league) = maybe_league {
+                if current_user.id != league.owner {
+                    return Err("Can't update a league you don't own".into())
+                }
+
+                League::update(&db, &input.id.clone(), input).await?;
+
+                Ok(league)
+            } else {
+                Err("League doesn't exist!".into())
+            }
+        } else {
+            Err("Unable to update league".into())
+        }
+    }
+
     async fn join_league(&self, ctx: &Context<'_>, id: ID) -> Result<League, Error> {
         let db: &Database = ctx.data()?;
 
@@ -282,4 +311,15 @@ pub struct CreateLeagueInput {
     pub password: Option<String>,
     pub max_players: i64,
     pub manual_state: bool,
+}
+
+#[derive(Clone, InputObject)]
+pub struct UpdateLeagueInput {
+    pub id: ID,
+    pub description: Option<String>,
+    pub public: Option<bool>,
+    pub password: Option<String>,
+    pub max_players: Option<i64>,
+    pub state: Option<LeagueState>,
+    pub status: Option<LeagueStatus>,
 }

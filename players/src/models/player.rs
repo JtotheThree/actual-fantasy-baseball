@@ -2,7 +2,7 @@ use async_graphql::*;
 use futures::stream::TryStreamExt;
 use serde::{Deserialize, Serialize};
 use wither::prelude::*;
-use wither::{bson::{doc, oid::ObjectId, Document}, mongodb::Database};
+use wither::{bson::{doc, oid::ObjectId, Document}, mongodb::{Database, options::FindOptions}};
 
 use common::enums;
 use crate::graphql::CreatePlayerInput;
@@ -71,8 +71,12 @@ impl Player {
         }
     }
 
-    pub async fn find_all(db: &Database, filter: Option<Document>) -> Result<Vec::<Self>> {
-        let cursor = Player::find(&db, filter, None).await?;
+    pub async fn find_all(db: &Database, filter: Option<Document>, sort: Option<Document>) -> Result<Vec::<Self>> {
+        let options = FindOptions::builder().sort(sort).build();
+
+        let cursor = Player::find(&db, filter, options).await?;
+
+
         let players: Vec<Player> = cursor.try_collect().await?;
 
         Ok(players)

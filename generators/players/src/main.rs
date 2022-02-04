@@ -33,10 +33,10 @@ pub struct CreatePlayer;
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "../../schema.graphql",
-    query_path = "graphql/set_league_state.graphql",
+    query_path = "graphql/set_league_status.graphql",
     response_derives = "Debug, PartialEq"
 )]
-pub struct SetLeagueState;
+pub struct SetLeagueStatus;
 
 
 impl From<Class> for create_player::Class {
@@ -44,7 +44,6 @@ impl From<Class> for create_player::Class {
         match item {
             Class::Bard => create_player::Class::BARD,
             Class::Cleric => create_player::Class::CLERIC,
-            Class::Druid => create_player::Class::DRUID,
             Class::Fighter => create_player::Class::FIGHTER,
             Class::Paladin => create_player::Class::PALADIN,
             Class::Ranger => create_player::Class::RANGER,
@@ -151,16 +150,6 @@ fn set_abilities(class: Class, ability_scores: Vec<u16>) -> Abilities {
                 charisma: ability_scores[1] as i64,
             }
         },
-        Class::Druid => {
-            Abilities {
-                strength: ability_scores[2] as i64,
-                dexterity: ability_scores[4] as i64,
-                constitution: ability_scores[3] as i64,
-                intelligence: ability_scores[1] as i64,
-                wisdom: ability_scores[5] as i64,
-                charisma: ability_scores[0] as i64,
-            }
-        },
         Class::Fighter => {
             Abilities {
                 strength: ability_scores[5] as i64,
@@ -219,7 +208,6 @@ fn calc_max_health(class: Class, constitution: i64) -> i64 {
     match class {
         Class::Bard => 8 + modifier,
         Class::Cleric => 8 + modifier,
-        Class::Druid => 8 + modifier,
         Class::Fighter => 10 + modifier,
         Class::Paladin => 10 + modifier,
         Class::Ranger => 10 + modifier,
@@ -251,14 +239,6 @@ fn calc_cost(class: Class, abilities: &Abilities, trait_one: Trait, trait_two: T
             cost += abilities.intelligence * DUMP_MULT;
             cost += abilities.wisdom * PREMIUM_MULT;
             cost += abilities.charisma * NORMAL_MULT;
-        },
-        Class::Druid => {
-            cost += abilities.strength * DUMP_MULT;
-            cost += abilities.dexterity * SECONDARY_MULT;
-            cost += abilities.constitution * SECONDARY_MULT;
-            cost += abilities.intelligence * NORMAL_MULT;
-            cost += abilities.wisdom * PREMIUM_MULT;
-            cost += abilities.charisma * DUMP_MULT;
         },
         Class::Fighter => {
             cost += abilities.strength * PREMIUM_MULT;
@@ -455,10 +435,10 @@ fn query_leagues() -> Result<leagues::ResponseData, Error> {
     Ok(data)
 }
 
-fn set_league_state(id: &str, state: set_league_state::LeagueState) -> Result<(), Error> {
-    let variables = set_league_state::Variables{
+fn set_league_status(id: &str, status: set_league_status::LeagueStatus) -> Result<(), Error> {
+    let variables = set_league_status::Variables{
         id: id.to_string(),
-        state,
+        status,
     };
 
     let client = Client::builder()
@@ -472,9 +452,9 @@ fn set_league_state(id: &str, state: set_league_state::LeagueState) -> Result<()
         )
         .build()?;
 
-    let response = post_graphql::<SetLeagueState, _>(&client, SERVER, variables)?;
+    let response = post_graphql::<SetLeagueStatus, _>(&client, SERVER, variables)?;
 
-    let data: set_league_state::ResponseData = response.data.expect("missing response data");
+    let data: set_league_status::ResponseData = response.data.expect("missing response data");
 
     Ok(())
 }
@@ -488,7 +468,7 @@ fn main() {
             for league in data.leagues.iter() {
                 if league.status == leagues::LeagueStatus::PLAYER_GENERATION {
                     gen_players_for_league(&league.id, league.max_players * PER_PLAYER);
-                    set_league_state(&league.id, set_league_state::                   
+                    set_league_status(&league.id, set_league_status::LeagueStatus::PLAYERS_COMPLETED);
                 }
             }
         },

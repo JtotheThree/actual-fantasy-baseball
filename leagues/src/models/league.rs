@@ -7,6 +7,8 @@ use serde::{Deserialize, Serialize};
 use wither::prelude::*;
 use wither::{bson::{doc, oid::ObjectId, Document}, bson, mongodb::Database};
 
+use crate::graphql::UpdateLeagueInput;
+
 #[derive(Copy, Clone, Debug, Eq, EnumIter, PartialEq, Enum, EnumString, Serialize, Deserialize)]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 pub enum LeagueStatus {
@@ -168,6 +170,46 @@ impl League {
         Ok(leagues)
     }
 
+    pub async fn update(db: &Database, id: &ID, input: UpdateLeagueInput) -> Result<Self> {
+        let query = doc! {
+            "_id": ObjectId::with_string(&id)?
+        };
+
+        if let Some(mut league) = League::find_one(db, Some(query), None).await? {
+            if let Some(description) = input.description {
+                league.description = description;
+            }
+
+            if let Some(state) = input.state {
+                league.state = state;
+            }
+
+            if let Some(password) = input.password {
+                league.password = Some(password);
+            } else {
+                league.password = None;
+            }
+
+            if let Some(public) = input.public {
+                league.public = public;
+            }
+
+            if let Some(status) = input.status {
+                league.status = status;
+            }
+
+            if let Some(max_players) = input.max_players {
+                league.max_players = max_players;
+            }
+
+            league.save(db, None).await?;
+
+            Ok(league)
+        } else {
+            Err(format!("league with id: {:?} not found", &id).into())
+        }
+    }
+
     // mutation
     pub async fn add_manager(db: &Database, id: String, user_id: String) -> Result<Self> {
         let query = doc! {
@@ -181,7 +223,7 @@ impl League {
 
             Ok(league)
         } else {
-            Err(format!("League with id: {:?} not found", &id).into())
+            Err(format!("league with id: {:?} not found", &id).into())
         }
     }
 
