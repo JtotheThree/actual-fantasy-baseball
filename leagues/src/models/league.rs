@@ -11,6 +11,7 @@ use crate::graphql::UpdateLeagueInput;
 
 #[derive(Copy, Clone, Debug, Eq, EnumIter, PartialEq, Enum, EnumString, Serialize, Deserialize)]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum LeagueStatus {
     PlayerGeneration,
     PlayersCompleted,
@@ -18,6 +19,7 @@ pub enum LeagueStatus {
 
 #[derive(Copy, Clone, Eq, EnumIter, PartialEq, Enum, EnumString, Serialize, Deserialize)]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum LeagueState {
     Manual,
     Created,

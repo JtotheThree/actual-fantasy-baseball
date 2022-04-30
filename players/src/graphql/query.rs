@@ -9,7 +9,7 @@ use wither::{mongodb::Database, bson::Document};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
-use common::enums::Class;
+use common::enums::{Class, Race, Gender};
 use common::filter::process_filter;
 use common::meta::MetaSelect;
 
@@ -17,11 +17,11 @@ pub type AppSchema = Schema<Query, Mutation, EmptySubscription>;
 
 #[Object]
 impl Player {
-    async fn id(&self) -> ID {
+    async fn id(&self) -> Option<ID> {
         if let Some(id) = &self.id {
-            ID::from(id)
+            Some(ID::from(id))
         } else {
-            ID::from("")
+            None //ID::from("")
         }
     }
 
@@ -34,10 +34,10 @@ impl Player {
     }
 
     async fn team(&self) -> Option<Team> {
-        if let Some(id) = &self.team {
-            Some(Team{ id: ID::from(&id) })
+        if let Some(team) = &self.team {
+            Some(Team { id: ID::from(team) })
         } else {
-            None
+            None //ID::from("")
         }
     }
 
@@ -185,6 +185,28 @@ impl Query {
 
         select_values
     }
+
+    async fn meta_race(&self) -> MetaSelect {
+        let mut select_values = MetaSelect::default();
+
+        for value in Race::iter() {
+            select_values.values.push(format!("{:?}", value));
+            select_values.labels.push(format!("{}", value));
+        }
+
+        select_values
+    }
+
+    async fn meta_gender(&self) -> MetaSelect {
+        let mut select_values = MetaSelect::default();
+
+        for value in Gender::iter() {
+            select_values.values.push(format!("{:?}", value));
+            select_values.labels.push(format!("{}", value));
+        }
+
+        select_values
+    }
 }
 
 #[Object(extends, cache_control(max_age = 60))]
@@ -214,6 +236,18 @@ impl Team {
         &self.id
     }
 
+    async fn player(&self, ctx: &Context<'_>) -> Result<Player> {
+        let db: &Database = ctx.data().expect("Cannot connect to database");
+
+        let maybe_player = Player::find_by_id(db, &self.id).await;
+
+        if let Some(player) = maybe_player {
+            Ok(player)
+        } else {
+            Err("Can't get player".into())
+        }
+    }
+
     async fn players(&self, ctx: &Context<'_>) -> Result<Vec<Player>> {
         let db: &Database = ctx.data().expect("Cannot connect to database");
 
@@ -222,7 +256,7 @@ impl Team {
         if let Ok(players) = maybe_players {
             Ok(players)
         } else {
-            Err("Can't get players for league".into())
+            Err("Can't get players for team".into())
         }
     }
 }
@@ -253,6 +287,19 @@ impl Mutation {
         new_player.save(&db, None).await?;
 
         Ok(new_player)
+    }
+
+    async fn set_team(&self, ctx: &Context<'_>, id: String, team_id: String) -> Result<Player> {
+        let db: &Database = ctx.data()?;
+
+        if let Some(mut player) = Player::find_by_id(db, &ID::from(id)).await {
+            player.team = Some(team_id.to_string());
+            player.save(db, None).await?;
+
+            Ok(player)
+        } else {
+            Err("Can't get player for id".into())
+        }
     }
 }
 

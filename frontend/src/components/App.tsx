@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Modal from 'react-modal';
 import { atom } from 'recoil';
 
 import {AUTH_TOKEN, SELECTED_LEAGUE} from '../constant'
@@ -21,6 +22,8 @@ export const selectedLeagueState = atom({
   key: 'selectedLeageState',
   default: localStorage.getItem(SELECTED_LEAGUE),
 });
+
+Modal.setAppElement("#root");
 
 function App() {
   return (

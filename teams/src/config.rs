@@ -51,6 +51,7 @@ impl Settings {
         // Get current RUN_MODE, should be: development/production
         let current_env = env::var("RUN_MODE").unwrap_or(String::from("development"));
 
+        config_file_path.push("teams");
         config_file_path.push("environments");
         config_file_path.push(format!("{}.yaml", current_env));
 

@@ -28,8 +28,8 @@ async-graphql-actix-web = "2.9.15"
 # Serialization
 serde = "1.0.123"
 serde_json = "1.0.61"
-strum = "0.22.0"
-strum_macros = "0.22.0"
+strum = "0.23.0"
+strum_macros = "0.23.0"
 
 # Environment
 config = "0.11.0"

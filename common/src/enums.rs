@@ -3,7 +3,6 @@ use core::fmt;
 use async_graphql::*;
 use serde::{Deserialize, Serialize};
 use strum_macros::{EnumIter, EnumString, EnumCount as EnumCountMacro};
-use strum::IntoEnumIterator;
 use strum::EnumCount;
 
 use rand::{
@@ -13,9 +12,19 @@ use rand::{
 
 #[derive(Copy, Clone, Eq, EnumIter, EnumCountMacro, PartialEq, Enum, EnumString, Serialize, Deserialize)]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Gender {
     Male,
     Female,
+}
+
+impl fmt::Display for Gender {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match &self {
+            Gender::Male => write!(f, "Male"),
+            Gender::Female => write!(f, "Female"),
+        }
+    }
 }
 
 impl fmt::Debug for Gender {
@@ -38,6 +47,7 @@ impl Distribution<Gender> for Standard {
 
 #[derive(Copy, Clone, Eq, EnumIter, PartialEq, Enum, EnumCountMacro, EnumString, Serialize, Deserialize)]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Race {
     Dwarf,
     Elf,
@@ -46,6 +56,20 @@ pub enum Race {
     Human,
     Orc,
 }
+
+impl fmt::Display for Race {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match &self {
+            Race::Dwarf => write!(f, "Dwarf"),
+            Race::Elf => write!(f, "Elf"),
+            Race::Goblin => write!(f, "Goblin"),
+            Race::Halfling => write!(f, "Hafling"),
+            Race::Human => write!(f, "Human"),
+            Race::Orc => write!(f, "Orc"),
+        }
+    }
+}
+
 
 impl fmt::Debug for Race {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -75,8 +99,9 @@ impl Distribution<Race> for Standard {
 }
 
 
-#[derive(Copy, Clone, Eq, EnumIter, PartialEq, Enum, EnumCountMacro, EnumString, Serialize, Deserialize)]
+#[derive(Copy, Clone, Eq, PartialEq, Enum, EnumCountMacro, EnumString, Serialize, Deserialize, EnumIter)]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Class {
     Bard,
     Cleric,
@@ -133,6 +158,7 @@ impl Distribution<Class> for Standard {
 
 #[derive(Copy, Clone, Debug, Eq, EnumIter, PartialEq, Enum, EnumCountMacro, EnumString, Serialize, Deserialize)]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Trait {
     HotTemper,
     Lucky,

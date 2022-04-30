@@ -2,6 +2,7 @@ import { gql, useApolloClient, useMutation, useQuery } from "@apollo/client";
 import { FormEvent, useState } from "react";
 import { useParams } from "react-router-dom";
 import { MY_ID } from "../constant";
+import {MY_TEAM_FOR_LEAGUE} from "../graphql/Team";
 import { Card, CardBody, CardHeader } from "./Card";
 import Form from "./Form";
 import Loader from "./Loader";
@@ -57,26 +58,6 @@ function CreateTeamForm() {
   )
 }
 
-const MY_TEAM_FOR_LEAGUE = gql`
-query MyTeamForLeague (
-  $ownerId: ID!
-  $leagueId: ID!
-) {
-  teams(filter:{
-    owner: $ownerId
-    league: $leagueId
-  }) {
-    id
-    name
-    gold
-    owner {
-      id
-      username
-    }
-  }
-}
-`;
-
 export function TeamInfo() {
   const { id } = useParams();
   const my_id = localStorage.getItem(MY_ID);
@@ -114,13 +95,29 @@ export function TeamInfo() {
     console.error(error);
   }
 
+  let playerCount = 0
+
+  const players = team.players.map((player: any) => {
+    playerCount++;
+    return (
+      <tr key={player.id} className="px-2">{player.name}</tr>
+    )
+  })
+
   return (
     <div>
       <Card>
         <CardHeader title={"Team: " + team.name} />
         <CardBody>
           Gold: {team.gold}<br/>
-
+          <table>
+            <thead>
+              <th className="text-left">Players: {playerCount}</th>
+            </thead>
+            <tbody>
+              {players}
+            </tbody>
+          </table>
         </CardBody>
       </Card>
     </div>

@@ -121,3 +121,4 @@ pub fn process_filter(filter: HashMap<String, Value>) -> Result<bson::Document> 
 
     Ok(filter)
 }
+

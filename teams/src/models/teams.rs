@@ -22,6 +22,7 @@ pub struct Team {
     pub owner: String,
 
     pub gold: i64,
+
     pub roster: Roster,
     pub lineup: Vec<Option<LineupSlot>>,
     pub starting_pitcher: Option<StartingPitcher>,
@@ -130,4 +131,45 @@ impl Team {
 
         Team::find_one(&db, doc! { "league": league_id, "owner": owner_id }, None).await.unwrap()
     }
+
+    pub async fn find_by_player_id(db: &Database, player_id: &str) -> Result<Self> {
+        if let Some(team) = Team::find_one(&db, doc! { "players": player_id }, None).await? {
+            Ok(team)
+        } else {
+            Err(format!("no team found for player with id: {:?}", &player_id).into())
+        }
+    }
+
+    pub async fn modify_gold(db: &Database, id: &str, gold: i64) -> Result<Self> {
+        let query = doc! {
+            "_id": ObjectId::with_string(id)?
+        };
+
+        if let Some(mut team) = Team::find_one(db, Some(query), None).await? {
+            team.gold = team.gold + gold;
+
+            team.save(db, None).await?;
+
+            Ok(team)
+        } else {
+            Err(format!("team with id: {:?} not found", &id).into())
+        }
+    }
+
+    /*pub async fn add_player(db: &Database, id: &str, player_id: &str, cost: i64) -> Result<Self> {
+        let query = doc! {
+            "_id": ObjectId::with_string(id)?
+        };
+
+        if let Some(mut team) = Team::find_one(db, Some(query), None).await? {
+            team.players.push(player_id.to_string());
+            team.gold = team.gold - cost;
+
+            team.save(db, None).await?;
+
+            Ok(team)
+        } else {
+            Err(format!("team with id: {:?} not found", &id).into())
+        }
+    }*/
 }

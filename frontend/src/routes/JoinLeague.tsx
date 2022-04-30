@@ -1,5 +1,6 @@
 import { gql, useApolloClient, useMutation, useQuery } from "@apollo/client"
 import { useState } from "react";
+import {DebounceInput} from "react-debounce-input";
 import { useNavigate } from "react-router-dom";
 import { useSetRecoilState } from "recoil";
 import { selectedLeagueState } from "../components/App";
@@ -132,7 +133,8 @@ export default function JoinLeague() {
 
   return (
     <div className="flex flex-col md:w-1/3 mx-auto p-8 space-y-8">
-      <input
+      <DebounceInput
+        debounceTimeout={300}
         value={search}
         onChange={(e: any) => setSearch(e.target.value)}
         placeholder="Search league name..."

@@ -58,6 +58,11 @@ pub struct League {
     pub id: ID,
 }
 
+// PLAYER
+pub struct Player {
+    pub id: ID,
+}
+
 
 #[Object(extends, cache_control(max_age = 60))]
 impl User {
@@ -96,6 +101,33 @@ impl League {
             Err("Can't get teams for league".into())
         }
     }
+}
+
+#[Object(extends, cache_control(max_age = 60))]
+impl Player {
+    #[graphql(external)]
+    async fn id(&self) -> &ID {
+        &self.id
+    }
+
+    /*async fn team(&self, ctx: &Context<'_>) -> Option<Team> {
+        let db: &Database = ctx.data().expect("Cannot connect to database");
+
+        if let Some(id) = &self.id {
+            let maybe_team = Team::find_by_player_id(db, &id).await;
+
+            info!("Searching for team by {:?}", self.id);
+
+            if let Ok(team) = maybe_team {
+                Some(team)
+            } else {
+                //Err("Can't get teams for league".into());
+                None
+            }
+        } else {
+            None
+        }
+    }*/
 }
 
 /// Query
@@ -181,4 +213,37 @@ impl Mutation {
             Err("Can't create team".into())
         }
     }
+
+    async fn modify_gold(&self, ctx: &Context<'_>, id: ID, cost: i64) -> Result<Team> {
+        let db: &Database = ctx.data()?;
+
+        Team::modify_gold(db, &id, cost).await
+    }
+
+    /*async fn add_player(&self, ctx: &Context<'_>, id: ID, player_id: ID, cost: i64) -> Result<Team> {
+        let db: &Database = ctx.data()?;
+
+        Team::add_player(db, &id, &player_id, cost).await
+
+        let redis_client: &redis::Client = ctx.data()?;
+
+        let mut con = redis_client.get_connection()?;
+        let token_data = ctx.data_opt::<TokenData<Claims>>().unwrap();
+
+        let maybe_current_user = get_current_user(&mut con, token_data);
+
+        if let Some(current_user) = maybe_current_user {
+            let mut new_team = Team::new_team(&name, &league_id, &current_user.id);
+
+            if let Ok(_) = new_team.save(&db, None).await {
+                Ok(new_team)
+            } else {
+                Err(Error::new("Can't create team, bad user"))
+            }
+        } else {
+            Err("Can't create team".into())
+        }
+    }*/
+
+
 }

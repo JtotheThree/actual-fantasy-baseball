@@ -203,6 +203,35 @@ fn set_abilities(class: Class, ability_scores: Vec<u16>) -> Abilities {
     }
 }
 
+fn add_racial_abilities(race: Race, abilities: &mut Abilities) {
+    match race {
+        Race::Dwarf => {
+            abilities.constitution += 2;
+        },
+        Race::Elf => {
+            abilities.dexterity += 2;
+        },
+        Race::Goblin => {
+            abilities.dexterity += 2;
+        },
+        Race::Halfling => {
+            abilities.charisma += 2;
+        },
+        Race::Human => {
+            abilities.strength += 1;
+            abilities.dexterity += 1;
+            abilities.constitution += 1;
+            abilities.intelligence += 1;
+            abilities.wisdom += 1;
+            abilities.charisma += 1;
+        },
+        Race::Orc => {
+            abilities.strength += 2;
+            abilities.constitution += 1;
+        },
+    }
+}
+
 fn calc_max_health(class: Class, constitution: i64) -> i64 {
     let modifier = (constitution - 10) / 2;
     match class {
@@ -340,7 +369,8 @@ fn gen_players_for_league(league_id: &str, count: i64) -> Result<(), Error> {
 
             ability_scores.sort();
 
-            let abilities = set_abilities(class, ability_scores);
+            let mut abilities = set_abilities(class, ability_scores);
+            add_racial_abilities(race, &mut abilities);
 
             let trait_one: Trait = rand::random();
             let trait_two: Trait = rand::random();

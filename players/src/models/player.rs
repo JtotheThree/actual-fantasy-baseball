@@ -11,7 +11,7 @@ use crate::graphql::CreatePlayerInput;
 #[derive(Clone, Debug, Model, Serialize, Deserialize)]
 #[model(
     collection_name = "players",
-    //index(keys = r#"doc!{"name": 1}"#, options = r#"doc!{"unique": true}"#)
+    index(keys = r#"doc!{"name": 1}"#)
 )]
 #[serde(rename_all = "camelCase")]
 pub struct Player {
