@@ -3,9 +3,10 @@ import { FormEvent, useState } from "react";
 import { useParams } from "react-router-dom";
 import { MY_ID } from "../constant";
 import {MY_TEAM_FOR_LEAGUE} from "../graphql/Team";
-import { Card, CardBody, CardHeader } from "./Card";
+import { Card, CardBody, CardHeader, CardHeaderLink, CardSubHeader } from "./Card";
 import Form from "./Form";
 import Loader from "./Loader";
+import Roster from "./Roster";
 
 const CREATE_TEAM = gql`
 mutation CreateTeam (
@@ -104,10 +105,12 @@ export function TeamInfo() {
     )
   })
 
+  console.log(team);
+
   return (
     <div>
       <Card>
-        <CardHeader title={"Team: " + team.name} />
+        <CardHeaderLink title={"Team: " + team.name} to={`/team/${team.id}`} />
         <CardBody>
           Gold: {team.gold}<br/>
           <table>
@@ -115,7 +118,7 @@ export function TeamInfo() {
               <th className="text-left">Players: {playerCount}</th>
             </thead>
             <tbody>
-              {players}
+              <Roster roster={team.roster} />
             </tbody>
           </table>
         </CardBody>

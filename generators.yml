@@ -1,0 +1,14 @@
+version: "3.9"
+
+services:
+### GENERATORS
+  gen_names:
+    build:
+      context: ./generators/names
+#      dockerfile: ./generators/names/Dockerfile
+    container_name: gen_names
+    restart: always
+    volumes:
+      - ./generators/names/models/:/app/models/:Z
+    ports:
+      - "9000:9000"

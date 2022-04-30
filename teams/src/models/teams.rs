@@ -24,49 +24,74 @@ pub struct Team {
     pub gold: i64,
 
     pub roster: Roster,
-    pub lineup: Vec<Option<LineupSlot>>,
-    pub starting_pitcher: Option<StartingPitcher>,
-    pub reserves: Vec<Option<String>>,
-    pub pitchers: Vec<Option<String>>,
+    pub lineup: Lineup,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, SimpleObject)]
+/*#[derive(Clone, Debug, Default, Serialize, Deserialize, SimpleObject)]
+#[serde(rename_all = "camelCase")]
+pub struct Pitching {
+    pub starting_pitcher: Option<String>,
+    pub relief_pitchers: Vec<String>,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize, SimpleObject)]
+#[serde(rename_all = "camelCase")]
+pub struct Catching {
+    pub catcher: Option<String>,
+    pub reserve_catcher: Option<String>,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize, SimpleObject)]
+#[serde(rename_all = "camelCase")]
+pub struct Infield {
+    pub first_base: Option<String>,
+    pub second_base: Option<String>,
+    pub third_base: Option<String>,
+    pub shortstop: Option<String>,
+    pub reserves: Vec<String>,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize, SimpleObject)]
+#[serde(rename_all = "camelCase")]
+pub struct Outfield {
+    pub left_field: Option<String>,
+    pub center_field: Option<String>,
+    pub right_field: Option<String>,
+    pub reserves: Vec<String>,
+}*/
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize, SimpleObject)]
 #[serde(rename_all = "camelCase")]
 pub struct Roster {
-    pub starting_pitchers: Vec<Option<String>>,
-    pub relief_pitchers: Vec<Option<String>>,
-    pub catchers: Vec<Option<String>>,
-    pub infielders: Vec<Option<String>>,
-    pub outfielders: Vec<Option<String>>,
+    pub starting_pitcher: Option<String>,
+    pub relief_pitchers: Vec<String>,
+    pub catcher: Option<String>,
+    pub catcher_reserves: Vec<String>,
+    pub first_base: Option<String>,
+    pub second_base: Option<String>,
+    pub third_base: Option<String>,
+    pub shortstop: Option<String>,
+    pub infield_reserves: Vec<String>,
+    pub left_field: Option<String>,
+    pub center_field: Option<String>,
+    pub right_field: Option<String>,
+    pub outfield_reserves: Vec<String>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, SimpleObject)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize, SimpleObject)]
 #[serde(rename_all = "camelCase")]
-pub struct LineupSlot {
-    pub player_id: String,
-    pub position: String,
-    pub sub_id: String,
+pub struct Lineup {
+    pub first: Option<String>,
+    pub second: Option<String>,
+    pub third: Option<String>,
+    pub fourth: Option<String>,
+    pub fifth: Option<String>,
+    pub sixth: Option<String>,
+    pub seventh: Option<String>,
+    pub eighth: Option<String>,
+    pub ninth: Option<String>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, SimpleObject)]
-#[serde(rename_all = "camelCase")]
-pub struct StartingPitcher {
-    pub player_id: String,
-    pub sub1_id: String,
-    pub sub2_id: Option<String>,
-}
-
-impl Roster {
-    pub fn new() -> Self {
-        Roster {
-            starting_pitchers: vec![None; 5],
-            relief_pitchers: vec![None; 7],
-            catchers: vec![None; 2],
-            infielders: vec![None; 6],
-            outfielders: vec![None; 5],
-        }
-    }
-}
 
 impl Team {
     pub fn new_team(name: &str, league_id: &str, owner_id: &str
@@ -77,11 +102,8 @@ impl Team {
             league: league_id.to_string(),
             owner: owner_id.to_string(),
             gold: 500000,
-            lineup: vec![None; 9],
-            starting_pitcher: None,
-            reserves: vec![None; 6],
-            pitchers: vec![None; 6],
-            roster: Roster::new(),
+            roster: Roster::default(),
+            lineup: Lineup::default(),
         }
     }
 
@@ -97,11 +119,11 @@ impl Team {
         Team::find_one(&db, doc! { "_id": id }, None).await.unwrap()
     }
 
-    pub async fn find_by_name(db: &Database, name: &str) -> Option<Self> {
+    /*pub async fn find_by_name(db: &Database, name: &str) -> Option<Self> {
         Team::find_one(&db, doc! { "name": name }, None)
             .await
             .unwrap()
-    }
+    }*/
 
     pub async fn find_by_owner_id(db: &Database, owner_id: &str) -> Result<Vec::<Self>> {
         let owner_id = ObjectId::with_string(&owner_id).expect("Can't get id from String");
@@ -121,7 +143,7 @@ impl Team {
         Ok(teams)
     }
 
-    pub async fn find_user_team_for_league(
+    /*pub async fn find_user_team_for_league(
         db: &Database,
         owner_id: &str,
         league_id: &str
@@ -138,7 +160,7 @@ impl Team {
         } else {
             Err(format!("no team found for player with id: {:?}", &player_id).into())
         }
-    }
+    }*/
 
     pub async fn modify_gold(db: &Database, id: &str, gold: i64) -> Result<Self> {
         let query = doc! {

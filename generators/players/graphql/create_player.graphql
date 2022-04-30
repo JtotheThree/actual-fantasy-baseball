@@ -1,10 +1,11 @@
 mutation CreatePlayer(
   $name: String!
-  $league: String!
+  $league: ID!
   $cost: Int!
   $race: Race!
   $class: Class!
   $gender: Gender!
+  $handedness: Handedness!
   $maxHealth: Int!
   $strength: Int!
   $dexterity: Int!
@@ -21,6 +22,7 @@ mutation CreatePlayer(
     race: $race
     class: $class
     gender: $gender
+    handedness: $handedness
     maxHealth: $maxHealth
     strength: $strength
     dexterity: $dexterity

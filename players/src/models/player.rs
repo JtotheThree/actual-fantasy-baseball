@@ -28,6 +28,7 @@ pub struct Player {
     pub gender: enums::Gender,
     pub race: enums::Race,
     pub class: enums::Class,
+    pub handedness: enums::Handedness,
 
     pub health: i64,
     pub max_health: i64,
@@ -58,6 +59,7 @@ impl Player {
             gender: input.gender,
             race: input.race,
             class: input.class,
+            handedness: input.handedness,
             max_health: input.max_health,
             strength: input.strength,
             dexterity: input.dexterity,
@@ -82,9 +84,9 @@ impl Player {
         Ok(players)
     }
 
-    pub async fn find_by_id(db: &Database, id: &ID) -> Option<Self> {
-        let oid = ObjectId::with_string(id).expect("Can't get id from String");
-        Player::find_one(&db, doc! { "_id": oid }, None).await.unwrap()
+    pub async fn find_by_id(db: &Database, id: &str) -> Option<Self> {
+        let id = ObjectId::with_string(id).expect("Can't get id from String");
+        Player::find_one(&db, doc! { "_id": id }, None).await.unwrap()
     }
 
     pub async fn find_by_league(db: &Database, league_id: &str) -> Result<Vec::<Self>> {

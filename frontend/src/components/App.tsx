@@ -11,6 +11,7 @@ import Signup from '../routes/Signup';
 import League from '../routes/League';
 import CreateLeague from '../routes/CreateLeague';
 import JoinLeague from '../routes/JoinLeague';
+import Team from '../routes/Team';
 
 
 export const tokenState = atom({
@@ -37,6 +38,7 @@ function App() {
           <Route path="/league/:id" element={<League />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/team/:id" element={<Team />} />
         </Routes>
       </BrowserRouter>
     </div>

@@ -7,10 +7,10 @@ use anyhow::Error;
 use rand;
 use rand::distributions::{Distribution, Uniform};
 
-use common::enums::{Class, Race, Gender, Trait};
+use common::enums::{Class, Race, Gender, Handedness, Trait};
 use common::structs::{Abilities};
 
-const SERVER: &str = "http://127.0.0.1:4000/";
+const SERVER: &str = "http://localhost:4000/";
 const PER_PLAYER: i64 = 64;
 
 #[derive(GraphQLQuery)]
@@ -76,6 +76,15 @@ impl From<Gender> for create_player::Gender {
     }
 }
 
+impl From<Handedness> for create_player::Handedness {
+    fn from(item: Handedness) -> Self {
+        match item {
+            Handedness::Left => create_player::Handedness::LEFT,
+            Handedness::Right => create_player::Handedness::RIGHT,
+        }
+    }
+}
+
 impl From<Trait> for create_player::Trait {
     fn from(item: Trait) -> Self {
         match item {
@@ -97,11 +106,10 @@ impl From<Trait> for create_player::Trait {
             Trait::SureShot => create_player::Trait::SURE_SHOT,
             Trait::Timid => create_player::Trait::TIMID,
             Trait::Tough => create_player::Trait::TOUGH,
+            Trait::Switch => create_player::Trait::SWITCH,
         }
     }
 }
-
-
 
 fn fetch_name(race: &str, gender: &str) -> Result<String, Error> {
     let url = format!("http://localhost:9000/name?race={}&gender={}", race, gender);
@@ -342,6 +350,7 @@ fn calc_trait_cost(t: Trait) -> i64{
         Trait::SureShot => 10000,
         Trait::Timid => -500,
         Trait::Tough => 1000,
+        Trait::Switch => 4000,
     }
 }
 
@@ -351,6 +360,7 @@ fn gen_players_for_league(league_id: &str, count: i64) -> Result<(), Error> {
         let race: Race = rand::random();
         let gender: Gender = rand::random();
         let class: Class = rand::random();
+        let handedness: Handedness = rand::random();
 
         let race_str = format!("{:?}", race).to_lowercase();
         let gender_str = format!("{:?}", gender).to_lowercase();
@@ -385,6 +395,7 @@ fn gen_players_for_league(league_id: &str, count: i64) -> Result<(), Error> {
                 race: race.into(),
                 class: class.into(),
                 gender: gender.into(),
+                handedness: handedness.into(),
                 max_health: max_health,
                 cost: cost,
                 strength: abilities.strength,
@@ -424,16 +435,24 @@ fn gen_players_for_league(league_id: &str, count: i64) -> Result<(), Error> {
                 )
                 .build()?;
 
+            //dbg!("{:?}", response);
+            println!("{} : hand: {} str: {} dex: {} con: {} int: {} wis: {} chr: {} : {:?} {:?} : {} {}", output, handedness,
+            abilities.strength, abilities.dexterity, abilities.constitution, abilities.intelligence, abilities.wisdom, abilities.charisma,
+            trait_one, trait_two, max_health, cost);
+
             let response = post_graphql::<CreatePlayer, _>(&client, SERVER, variables)?;
+
+            if !response.errors.is_none() {
+                dbg!{"{:?}", response.errors};
+            }
+
 
             let data: create_player::ResponseData = response.data.unwrap();
 
             //println!("{:?}", data.create_player.id.to_string());
 
-            //dbg!("{:?}", response);
-            println!("{} : str: {} dex: {} con: {} int: {} wis: {} chr: {} : {:?} {:?} : {} {}", output,
-                abilities.strength, abilities.dexterity, abilities.constitution, abilities.intelligence, abilities.wisdom, abilities.charisma,
-                trait_one, trait_two, max_health, cost);
+
+
         } else {
             dbg!("{:?}", name);
         }
@@ -498,7 +517,7 @@ fn main() {
             for league in data.leagues.iter() {
                 if league.status == leagues::LeagueStatus::PLAYER_GENERATION {
                     gen_players_for_league(&league.id, league.max_players * PER_PLAYER);
-                    set_league_status(&league.id, set_league_status::LeagueStatus::PLAYERS_COMPLETED);
+                    //set_league_status(&league.id, set_league_status::LeagueStatus::PLAYERS_COMPLETED);
                 }
             }
         },

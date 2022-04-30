@@ -4,7 +4,7 @@ use async_graphql::*;
 use jsonwebtoken::TokenData;
 use strum::IntoEnumIterator;
 use wither::prelude::*;
-use wither::{mongodb::Database};
+use wither::mongodb::Database;
 
 use std::collections::HashMap;
 
@@ -288,12 +288,12 @@ impl Mutation {
 
     async fn add_manager_to_league(
         &self, ctx: &Context<'_>,
-        league_id: String,
-        user_id: String,
+        league_id: ID,
+        user_id: ID,
     ) -> Result<League, Error> {
         let db: &Database = ctx.data()?;
 
-        if let Ok(league) = League::add_manager(db, league_id, user_id).await {
+        if let Ok(league) = League::add_manager(db, league_id.to_string(), user_id.to_string()).await {
             Ok(league)
         } else {
             Err("Cannot insert user into league".into())

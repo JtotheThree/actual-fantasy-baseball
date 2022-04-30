@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 
-use crate::models::*;
+use crate::models::{Lineup, Team};
 
 use common::*;
+use common::enums::Position;
 use async_graphql::*;
 use jsonwebtoken::TokenData;
 use wither::prelude::*;
@@ -39,11 +40,25 @@ impl Team {
         self.gold
     }
 
-    async fn roster(&self) -> &Roster {
-        &self.roster
+    async fn roster(&self) -> Roster {
+        Roster {
+            starting_pitcher: option_to_player(&self.roster.starting_pitcher),
+            relief_pitchers: vec_to_players(&self.roster.relief_pitchers),
+            catcher: option_to_player(&self.roster.catcher),
+            catcher_reserves: vec_to_players(&self.roster.catcher_reserves),
+            first_base: option_to_player(&self.roster.first_base),
+            second_base: option_to_player(&self.roster.second_base),
+            third_base: option_to_player(&self.roster.third_base),
+            shortstop: option_to_player(&self.roster.shortstop),
+            infield_reserves: vec_to_players(&self.roster.infield_reserves),
+            left_field: option_to_player(&self.roster.left_field),
+            center_field: option_to_player(&self.roster.center_field),
+            right_field: option_to_player(&self.roster.right_field),
+            outfield_reserves: vec_to_players(&self.roster.outfield_reserves),
+        }
     }
 
-    async fn lineup(&self) -> &Vec<Option<LineupSlot>> {
+    async fn lineup(&self) -> &Lineup {
         &self.lineup
     }
 }
@@ -63,6 +78,72 @@ pub struct Player {
     pub id: ID,
 }
 
+/*impl From<Option<String>> for Player {
+    fn from(item: String) -> Self {
+        if let Some(item) = item {
+            Player {
+                id: Some(ID::from(item)),
+            }
+        } else {
+            Player {
+                id: "",
+            }
+        }
+    }
+}*/
+
+fn option_to_player(item: &Option<String>) -> Option<Player> {
+    if let Some(item) = item {
+        Some(Player { id: ID::from(item) })
+    } else {
+        None
+        //Player { id: ID::from("") }
+    }
+}
+
+fn vec_to_players(list: &Vec<String>) -> Vec<Player> {
+    list.iter().map(|id| Player{
+        id: ID::from(id)
+    })
+    .collect()
+}
+
+#[derive(SimpleObject)]
+pub struct Roster {
+    pub starting_pitcher: Option<Player>,
+    pub relief_pitchers: Vec<Player>,
+    pub catcher: Option<Player>,
+    pub catcher_reserves: Vec<Player>,
+    pub first_base: Option<Player>,
+    pub second_base: Option<Player>,
+    pub third_base: Option<Player>,
+    pub shortstop: Option<Player>,
+    pub infield_reserves: Vec<Player>,
+    pub left_field: Option<Player>,
+    pub center_field: Option<Player>,
+    pub right_field: Option<Player>,
+    pub outfield_reserves: Vec<Player>,
+}
+
+/*impl From<crate::models::Roster> for Roster {
+    fn from(item: crate::models::Roster) -> Self {
+        Roster {
+            starting_pitcher: option_to_player(item.starting_pitcher),
+            relief_pitchers: vec_to_players(item.relief_pitchers),
+            catcher: option_to_player(item.catcher),
+            catcher_reserves: vec_to_players(item.catcher_reserves),
+            first_base: option_to_player(item.first_base),
+            second_base: option_to_player(item.second_base),
+            third_base: option_to_player(item.third_base),
+            shortstop: option_to_player(item.shortstop),
+            infield_reserves: vec_to_players(item.infield_reserves),
+            left_field: option_to_player(item.left_field),
+            center_field: option_to_player(item.center_field),
+            right_field: option_to_player(item.right_field),
+            outfield_reserves: vec_to_players(item.outfield_reserves),
+        }
+    }
+}*/
 
 #[Object(extends, cache_control(max_age = 60))]
 impl User {
@@ -93,6 +174,7 @@ impl League {
 
     async fn teams(&self, ctx: &Context<'_>) -> Result<Vec<Team>> {
         let db: &Database = ctx.data().expect("Cannot connect to database");
+
         let maybe_teams = Team::find_by_league_id(db, &self.id).await;
 
         if let Ok(teams) = maybe_teams {
@@ -211,6 +293,36 @@ impl Mutation {
             }
         } else {
             Err("Can't create team".into())
+        }
+    }
+
+    async fn set_player_position(&self, ctx: &Context<'_>, team: ID, player: ID, position: Position) -> Result<Team> {
+        let db: &Database = ctx.data()?;
+
+        if let Some(mut team) = Team::find_by_id(db, &team).await {
+            let player_id = player.to_string();
+
+            match position {
+                Position::Reserve => {},
+                Position::StartingPitcher => {team.roster.starting_pitcher = Some(player_id);},
+                Position::ReliefPitcher => {team.roster.relief_pitchers.push(player_id);},
+                Position::Catcher => {team.roster.catcher = Some(player_id);},
+                Position::ReserveCatcher => {team.roster.catcher_reserves.push(player_id);},
+                Position::FirstBase => {team.roster.first_base = Some(player_id);},
+                Position::SecondBase => {team.roster.second_base = Some(player_id);},
+                Position::ThirdBase => {team.roster.third_base = Some(player_id);},
+                Position::Shortstop => {team.roster.shortstop = Some(player_id);},
+                Position::InfieldReserve => {team.roster.infield_reserves.push(player_id);},
+                Position::LeftField => {team.roster.left_field = Some(player_id);},
+                Position::CenterField => {team.roster.center_field = Some(player_id);},
+                Position::RightField => {team.roster.right_field = Some(player_id);},
+                Position::OutfieldReserve => {team.roster.outfield_reserves.push(player_id);},
+            }
+
+            team.save(db, None).await?;
+            Ok(team)
+        } else {
+            Err("Can't find team by id".into())
         }
     }
 

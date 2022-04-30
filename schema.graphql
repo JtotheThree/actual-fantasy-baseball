@@ -15,7 +15,6 @@ directive @requires(fields: String!) on FIELD_DEFINITION
 enum Class {
   BARD
   CLERIC
-  DRUID
   FIGHTER
   PALADIN
   RANGER
@@ -34,11 +33,12 @@ input CreateLeagueInput {
 
 input CreatePlayerInput {
   name: String!
-  league: String!
+  league: ID!
   cost: Int!
   gender: Gender!
   race: Race!
   class: Class!
+  handedness: Handedness!
   maxHealth: Int!
   strength: Int!
   dexterity: Int!
@@ -53,6 +53,11 @@ input CreatePlayerInput {
 enum Gender {
   MALE
   FEMALE
+}
+
+enum Handedness {
+  LEFT
+  RIGHT
 }
 
 # A scalar that can represent any JSON Object value.
@@ -72,6 +77,7 @@ type League {
   managersCount: Int!
   user: User!
   teams: [Team!]!
+  players: [Player!]!
 }
 
 enum LeagueState {
@@ -89,10 +95,16 @@ enum LeagueStatus {
   PLAYERS_COMPLETED
 }
 
-type LineupSlot {
-  playerId: String!
-  position: String!
-  subId: String!
+type Lineup {
+  first: String
+  second: String
+  third: String
+  fourth: String
+  fifth: String
+  sixth: String
+  seventh: String
+  eighth: String
+  ninth: String
 }
 
 input LoginInput {
@@ -123,21 +135,28 @@ type Mutation {
   logout: LogoutResponse!
   selectLeague(id: ID!): League!
   createLeague(input: CreateLeagueInput!): League!
+  updateLeague(input: UpdateLeagueInput!): League!
   joinLeague(id: ID!): League!
   setLeagueState(id: ID!, state: LeagueState!): League!
   setLeagueStatus(id: ID!, status: LeagueStatus!): League!
-  addManagerToLeague(leagueId: String!, userId: String!): League!
+  addManagerToLeague(leagueId: ID!, userId: ID!): League!
   createTeam(name: String!, leagueId: ID!): Team!
+  setPlayerPosition(team: ID!, player: ID!, position: Position!): Team!
+  modifyGold(id: ID!, cost: Int!): Team!
   createPlayer(input: CreatePlayerInput!): Player!
+  setTeam(player: ID!, team: ID!): Player!
 }
 
 type Player {
   id: ID!
   name: String!
+  league: League!
+  team: Team
   cost: Int!
   gender: Gender!
   race: Race!
   class: Class!
+  handedness: Handedness!
   health: Int!
   maxHealth: Int!
   strength: Int!
@@ -150,6 +169,23 @@ type Player {
   hiddenTraits: [Trait!]
 }
 
+enum Position {
+  RESERVE
+  STARTING_PITCHER
+  RELIEF_PITCHER
+  CATCHER
+  RESERVE_CATCHER
+  FIRST_BASE
+  SECOND_BASE
+  THIRD_BASE
+  SHORTSTOP
+  INFIELD_RESERVE
+  LEFT_FIELD
+  CENTER_FIELD
+  RIGHT_FIELD
+  OUTFIELD_RESERVE
+}
+
 type Query {
   # Get current user info
   me: User!
@@ -160,8 +196,11 @@ type Query {
   metaLeagueState: MetaSelect!
   teams(filter: JSONObject): [Team!]!
   team(id: ID!): Team!
-  players(filter: JSONObject): [Player!]!
+  players(filter: JSONObject, sort: JSONObject): [Player!]!
   player(id: ID!): Player!
+  metaClass: MetaSelect!
+  metaRace: MetaSelect!
+  metaGender: MetaSelect!
 }
 
 enum Race {
@@ -174,11 +213,19 @@ enum Race {
 }
 
 type Roster {
-  startingPitchers: [String]!
-  reliefPitchers: [String]!
-  catchers: [String]!
-  infielders: [String]!
-  outfielders: [String]!
+  startingPitcher: Player
+  reliefPitchers: [Player!]!
+  catcher: Player
+  catcherReserves: [Player!]!
+  firstBase: Player
+  secondBase: Player
+  thirdBase: Player
+  shortstop: Player
+  infieldReserves: [Player!]!
+  leftField: Player
+  centerField: Player
+  rightField: Player
+  outfieldReserves: [Player!]!
 }
 
 input SignupInput {
@@ -195,7 +242,9 @@ type Team {
   league: League!
   gold: Int!
   roster: Roster!
-  lineup: [LineupSlot]!
+  lineup: Lineup!
+  player: Player!
+  players: [Player!]!
 }
 
 enum Trait {
@@ -217,6 +266,17 @@ enum Trait {
   QUICK_WITTED
   GOON
   TIMID
+  SWITCH
+}
+
+input UpdateLeagueInput {
+  id: ID!
+  description: String
+  public: Boolean
+  password: String
+  maxPlayers: Int
+  state: LeagueState
+  status: LeagueStatus
 }
 
 type User {

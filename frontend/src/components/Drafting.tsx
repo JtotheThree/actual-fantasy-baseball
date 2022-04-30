@@ -4,7 +4,7 @@ import Modal from 'react-modal';
 import { Card, CardBody, CardHeader } from "./Card";
 import Loader from "./Loader";
 
-import toTitleCase from "../utils";
+import toTitleCase, { convertHandednessToUI } from "../utils";
 import {DebounceInput} from "react-debounce-input";
 import {useParams} from "react-router-dom";
 import {MY_ID} from "../constant";
@@ -34,6 +34,7 @@ query GetPlayersForDrafting (
   $league: String!
   $class: String!
   $race: String!
+  $handedness: String!
   $strength: Int!
   $dexterity: Int!
   $constitution: Int!
@@ -46,6 +47,7 @@ query GetPlayersForDrafting (
     team: null
     class: {_regex: $class},
     race: {_regex: $race},
+    handedness: {_regex: $handedness}
     _and: [
       {strength: {_gt: $strength}}
       {dexterity: {_gt: $dexterity}}
@@ -62,6 +64,7 @@ query GetPlayersForDrafting (
     gender
     race
     class
+    handedness
     maxHealth
     strength
     dexterity
@@ -76,31 +79,31 @@ query GetPlayersForDrafting (
 
 const DRAFT_PLAYER = gql`
 mutation DraftPlayer(
-  $teamId: String!
-  $playerId: String!
-) {
-  setTeam(
-    id: $playerId
-    teamId: $teamId
-  ) {
-    name
-    team {
-      name
-    }
-  }
-}
-`;
-
-const MODIFY_GOLD = gql `
-mutation ModifyGold(
-  $teamId: ID!
+  $team: ID!
+  $player: ID!
+  $position: Position!
   $cost: Int!
 ) {
+	setTeam(
+    player: $player
+  	team: $team
+  ) {
+    id
+  }
+
+  setPlayerPosition(
+    team: $team
+  	player: $player
+    position: $position
+  ) {
+    id
+  }
+
   modifyGold(
-    id: $teamId
+    id: $team
     cost: $cost
   ) {
-    name
+    id
   }
 }
 `;
@@ -136,7 +139,7 @@ function DraftingClassFilter(props: DraftingClassFilterProps) {
 
     return (
       <div>
-        <select name="classFilter" defaultValue={index} onChange={props.onChange}> 
+        <select name="classFilter" defaultValue={index} onChange={props.onChange}>
           {classes}
         </select>
       </div>
@@ -177,7 +180,7 @@ function DraftingRaceFilter(props: DraftingRaceFilterProps) {
 
     return (
       <div>
-        <select name="classFilter" defaultValue={index} onChange={props.onChange}> 
+        <select name="classFilter" defaultValue={index} onChange={props.onChange}>
           {races}
         </select>
       </div>
@@ -185,6 +188,23 @@ function DraftingRaceFilter(props: DraftingRaceFilterProps) {
   } else {
     return null
   }
+}
+
+type DraftingHandednessFilterProps = {
+  selected: String,
+  onChange: any,
+}
+
+function DraftingHandednessFilter(props: DraftingHandednessFilterProps) {
+  return (
+    <div>
+      <select name="handednessFilter" onChange={props.onChange}>
+        <option key="ANY" value=".*">Any</option>
+        <option key="LEFT" value="LEFT">Left</option>
+        <option key="RIGHT" value="RIGHT">Right</option>
+      </select>
+    </div>
+  )
 }
 
 type PlayerRowProps = {
@@ -197,10 +217,14 @@ function PlayerRow(props: PlayerRowProps) {
   const [error, setError] = useState("");
   const client = useApolloClient();
 
+  const [selectedPosition, setPosition] = useState("RESERVE");
+
   const [draft] = useMutation(DRAFT_PLAYER, {
     variables: {
-      teamId: props.team,
-      playerId: props.player.id,
+      team: props.team,
+      player: props.player.id,
+      position: selectedPosition,
+      cost: -props.player.cost,
     },
     onCompleted: ({ team }) => {
       console.log(team);
@@ -208,13 +232,6 @@ function PlayerRow(props: PlayerRowProps) {
     onError: ({message}) => {
       console.error(message);
       setError(message);
-    }
-  });
-
-  const [gold] = useMutation(MODIFY_GOLD, {
-    variables: {
-      teamId: props.team,
-      cost: -props.player.cost,
     }
   });
 
@@ -230,7 +247,6 @@ function PlayerRow(props: PlayerRowProps) {
 
   function onConfirm() {
     draft();
-    gold();
     client.resetStore();
     setIsOpen(false);
   }
@@ -254,6 +270,7 @@ function PlayerRow(props: PlayerRowProps) {
       <td className="py-4 text-2xl">{player.name}</td>
       <td>{toTitleCase(player.class)}</td>
       <td>{toTitleCase(player.race)}</td>
+      <td>{toTitleCase(player.handedness)}</td>
       <td className="font-bold text-lg">{player.strength}</td>
       <td className="font-bold text-lg">{player.dexterity}</td>
       <td className="font-bold text-lg">{player.constitution}</td>
@@ -307,6 +324,24 @@ function PlayerRow(props: PlayerRowProps) {
           </table>
         <br></br>
         <span className="text-lg font-bold">For: {player.cost} Gold</span>
+        <br></br>
+        <label>Draft to position:</label>
+        <select onChange={(event) => setPosition(event.target.value)} value={selectedPosition}>
+          <option value="RESERVE">Reserve</option>
+          <option value="STARTING_PITCHER">Starting Pitcher</option>
+          <option value="RELIEF_PITCHER">Relief Pitcher</option>
+          <option value="CATCHER">Catcher</option>
+          <option value="RESERVE_CATCHER">Reserve Catcher</option>
+          <option value="FIRST_BASE">First Base</option>
+          <option value="SECOND_BASE">Second Base</option>
+          <option value="THIRD_BASE">Third Base</option>
+          <option value="SHORTSTOP">Shortstop</option>
+          <option value="INFIELD_RESERVE">Infield Reserve</option>
+          <option value="LEFT_FIELD">Left Field</option>
+          <option value="CENTER_FIELD">Center Field</option>
+          <option value="RIGHT_FIELD">Right Field</option>
+          <option value="OUTFIELD_RESERVE">Outfield Reserve</option>
+        </select>
         <div className="flex">
           <button className="btn p-3 my-2 bg-gray-700 text-paper rounded-sm border-b-4 border-paper w-full font-bold hover:bg-red-800" onClick={closeModal}>Cancel</button>
           <button className="btn mx-4 p-3 my-2 bg-gray-700 text-paper rounded-sm border-b-4 border-paper w-full font-bold hover:bg-red-800" onClick={onConfirm}>Confirm</button>
@@ -322,6 +357,7 @@ type DraftingPlayerListProps = {
   team: string,
   classFilter: string,
   raceFilter: string,
+  handednessFilter: string,
   strengthFilter: number,
   dexterityFilter: number,
   constitutionFilter: number,
@@ -337,6 +373,7 @@ function DraftingPlayerList(props: DraftingPlayerListProps) {
       league: props.league,
       class: props.classFilter,
       race: props.raceFilter,
+      handedness: props.handednessFilter,
       strength: props.strengthFilter,
       dexterity: props.dexterityFilter,
       constitution: props.constitutionFilter,
@@ -406,6 +443,7 @@ type DraftingProps = {
 export default function Drafting(props: DraftingProps) {
   const [classFilter, setClassFilter] = useState(".*");
   const [raceFilter, setRaceFilter] = useState(".*");
+  const [handednessFilter, setHandednessFilter] = useState(".*");
   const [strengthFilter, setStrengthFilter] = useState(0);
   const [dexterityFilter, setDexterityFilter] = useState(0);
   const [constitutionFilter, setConstitutionFilter] = useState(0);
@@ -442,6 +480,10 @@ export default function Drafting(props: DraftingProps) {
     setRaceFilter(e.target.value);
   }
 
+  function handednessFilterChange(e: any) {
+    setHandednessFilter(e.target.value);
+  }
+
   console.log(data.teams[0].id)
 
   return (
@@ -454,6 +496,7 @@ export default function Drafting(props: DraftingProps) {
               <th className="text-left">NAME</th>
               <th className="text-left">CLASS</th>
               <th className="text-left">RACE</th>
+              <th className="text-left">HAND</th>
               <th className="text-left">STR</th>
               <th className="text-left">DEX</th>
               <th className="text-left">CON</th>
@@ -469,6 +512,7 @@ export default function Drafting(props: DraftingProps) {
               <th className="text-left"></th>
               <th className="text-left w-24"><DraftingClassFilter selected={classFilter} onChange={classFilterChange} /></th>
               <th className="text-left w-24"><DraftingRaceFilter selected={raceFilter} onChange={raceFilterChange} /></th>
+              <th className="text-left w-24"><DraftingHandednessFilter selected={handednessFilter} onChange={handednessFilterChange} /></th>
               <th className="text-left">&lt; <DraftingAttrib default={strengthFilter} state={setStrengthFilter} /></th>
               <th className="text-left">&lt; <DraftingAttrib default={dexterityFilter} state={setDexterityFilter} /></th>
               <th className="text-left">&lt; <DraftingAttrib default={constitutionFilter} state={setConstitutionFilter} /></th>
@@ -481,11 +525,12 @@ export default function Drafting(props: DraftingProps) {
               <th></th>
             </tr>
           </thead>
-            <DraftingPlayerList 
-              league={props.league.id} 
+            <DraftingPlayerList
+              league={props.league.id}
               team={data.teams[0].id}
-              classFilter={classFilter} 
+              classFilter={classFilter}
               raceFilter={raceFilter}
+              handednessFilter={handednessFilter}
               strengthFilter={strengthFilter}
               dexterityFilter={dexterityFilter}
               constitutionFilter={constitutionFilter}

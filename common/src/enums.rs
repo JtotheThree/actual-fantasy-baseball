@@ -10,6 +10,26 @@ use rand::{
     Rng,
 };
 
+#[derive(Copy, Clone, Eq, EnumIter, PartialEq, Enum, EnumCountMacro, EnumString, Serialize, Deserialize)]
+#[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum Position {
+    Reserve,
+    StartingPitcher,
+    ReliefPitcher,
+    Catcher,
+    ReserveCatcher,
+    FirstBase,
+    SecondBase,
+    ThirdBase,
+    Shortstop,
+    InfieldReserve,
+    LeftField,
+    CenterField,
+    RightField,
+    OutfieldReserve,
+}
+
 #[derive(Copy, Clone, Eq, EnumIter, EnumCountMacro, PartialEq, Enum, EnumString, Serialize, Deserialize)]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -155,6 +175,42 @@ impl Distribution<Class> for Standard {
     }
 }
 
+#[derive(Copy, Clone, Eq, PartialEq, Enum, EnumCountMacro, EnumString, Serialize, Deserialize, EnumIter)]
+#[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum Handedness {
+    Left,
+    Right,
+}
+
+impl fmt::Display for Handedness {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match &self {
+            Handedness::Left => write!(f, "Left"),
+            Handedness::Right => write!(f, "Right"),
+        }
+    }
+}
+
+impl fmt::Debug for Handedness {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match &self {
+            Handedness::Left => write!(f, "LEFT"),
+            Handedness::Right => write!(f, "RIGHT"),
+        }
+    }
+}
+
+impl Distribution<Handedness> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Handedness {
+        if rng.gen_range(0..100) > 75 {
+            return Handedness::Left;
+        } else {
+            return Handedness::Right;
+        }
+    }
+}
+
 
 #[derive(Copy, Clone, Debug, Eq, EnumIter, PartialEq, Enum, EnumCountMacro, EnumString, Serialize, Deserialize)]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
@@ -178,6 +234,7 @@ pub enum Trait {
     QuickWitted,
     Goon,
     Timid,
+    Switch,
 }
 
 /*impl fmt::Debug for Trait {
@@ -211,6 +268,7 @@ impl Distribution<Trait> for Standard {
             15 => Trait::QuickWitted,
             16 => Trait::Goon,
             17 => Trait::Timid,
+            18 => Trait::Switch,
             _ => Trait::Boring,
         }
     }

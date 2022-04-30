@@ -1,7 +1,6 @@
 use crate::models::*;
 use common::*;
 use async_graphql::*;
-use jsonwebtoken::TokenData;
 use strum::IntoEnumIterator;
 use wither::prelude::*;
 use wither::{mongodb::Database, bson::Document};
@@ -17,11 +16,11 @@ pub type AppSchema = Schema<Query, Mutation, EmptySubscription>;
 
 #[Object]
 impl Player {
-    async fn id(&self) -> Option<ID> {
+    async fn id(&self) -> ID {
         if let Some(id) = &self.id {
-            Some(ID::from(id))
+            ID::from(id)
         } else {
-            None //ID::from("")
+            ID::from("")
         }
     }
 
@@ -55,6 +54,10 @@ impl Player {
 
     async fn class(&self) -> enums::Class {
         self.class
+    }
+
+    async fn handedness(&self) -> enums::Handedness {
+        self.handedness
     }
 
     async fn health(&self) -> i64 {
@@ -167,6 +170,7 @@ impl Query {
     #[graphql(entity)]
     async fn find_player_by_id(&self, ctx: &Context<'_>, id: ID) -> Result<Player> {
         let db: &Database = ctx.data()?;
+
         let maybe_player = Player::find_by_id(db, &id).await;
         if let Some(player) = maybe_player {
             Ok(player)
@@ -289,11 +293,11 @@ impl Mutation {
         Ok(new_player)
     }
 
-    async fn set_team(&self, ctx: &Context<'_>, id: String, team_id: String) -> Result<Player> {
+    async fn set_team(&self, ctx: &Context<'_>, player: ID, team: ID) -> Result<Player> {
         let db: &Database = ctx.data()?;
 
-        if let Some(mut player) = Player::find_by_id(db, &ID::from(id)).await {
-            player.team = Some(team_id.to_string());
+        if let Some(mut player) = Player::find_by_id(db, &player).await {
+            player.team = Some(team.to_string());
             player.save(db, None).await?;
 
             Ok(player)
@@ -308,11 +312,12 @@ impl Mutation {
 #[derive(Clone, InputObject)]
 pub struct CreatePlayerInput {
     pub name: String,
-    pub league: String,
+    pub league: ID,
     pub cost: i64,
     pub gender: enums::Gender,
     pub race: enums::Race,
     pub class: enums::Class,
+    pub handedness: enums::Handedness,
     pub max_health: i64,
     pub strength: i64,
     pub dexterity: i64,
